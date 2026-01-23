@@ -1,0 +1,6 @@
+name: Invasion
+version: '${project.version}'
+main: me.stephenminer.invasion.Invasion
+api-version: '1.20'
+commands:
+  testnexus:

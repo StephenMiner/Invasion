@@ -1,0 +1,4 @@
+# Project exclude paths
+/main/target/
+/target/
+/v1_21_R1/target/
