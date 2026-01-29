@@ -1,5 +1,6 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
+import me.stephenminer.invasion.nexus.Nexus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -10,7 +11,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.UUID;
 
 public class InvasionGoal extends Goal {
     protected final Mob mob;
@@ -86,6 +89,8 @@ public class InvasionGoal extends Goal {
                 digging = false;
                 level.destroyBlock(current.digTargets[digIndex], true, mob);
                 digIndex++;
+                if (digIndex < numBuild)
+                    maxBreakTime = breakTicks(current.digTargets[digIndex]);
                 breakProg = 0;
             }
             if (!digging && buildIndex < numBuild){
@@ -95,6 +100,7 @@ public class InvasionGoal extends Goal {
                 if (buildProg < maxBuildTime) return;
                 level.setBlockAndUpdate(current.buildTargets[buildIndex], Blocks.OAK_PLANKS.defaultBlockState());
                 buildIndex++;
+
                 buildProg = 0;
             }
         }else{

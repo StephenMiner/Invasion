@@ -1,18 +1,23 @@
 package me.stephenminer.invasion.listener;
 
 import me.stephenminer.invasion.Invasion;
+import me.stephenminer.invasion.entity.MobType;
 import me.stephenminer.invasion.nexus.Nexus;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.Mob;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -23,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -45,7 +51,7 @@ public class NexusListener implements Listener {
         Nexus nexus = new Nexus(event.getBlock().getLocation(), 200);
         BlockKey key = new BlockKey(event.getBlock().getLocation());
         nexusMap.put(key, nexus);
-        writeAdditionalPos(event.getBlock().getChunk(), event.getBlock().getLocation());
+        writeAdditionalPos(event.getBlock().getChunk(), event.getBlock().getLocation(), nexus);
     }
 
     @EventHandler
@@ -62,7 +68,8 @@ public class NexusListener implements Listener {
         }
     }
 
-    public void writeAdditionalPos(Chunk chunk, Location loc){
+
+    public void writeAdditionalPos(Chunk chunk, Location loc, Nexus nexus){
         PersistentDataContainer container = chunk.getPersistentDataContainer();
         byte[] posArr = null;
         if (container.has(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY))
@@ -76,6 +83,8 @@ public class NexusListener implements Listener {
         }catch (IOException e){
             e.printStackTrace();
         }
+        if (nexus != null)
+            outStream.write(nexus.catalyst().encoding());
         container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
     }
 
@@ -84,15 +93,21 @@ public class NexusListener implements Listener {
         if (!container.has(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY)) return;
         byte[] posArr = container.get(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY);
         ByteArrayInputStream inStream = new ByteArrayInputStream(posArr);
-        while (inStream.available() > 2){
+        while (inStream.available() > 3){
             int d1 = inStream.read();
             int d2 = inStream.read();
             int d3 = inStream.read();
+            int catType = inStream.read();
             int data = (d1 << 16) | (d2 << 8) | d3;
             Block b = unpackPosition(chunk, data);
             BlockKey key = new BlockKey(b.getX(), b.getY(), b.getZ());
             if (!nexusMap.containsKey(key)) {
                 Nexus nexus = new Nexus(b.getLocation(), 200);
+                if (catType != 0){
+                    Nexus.Catalyst cat = Nexus.Catalyst.fromByte((byte) catType);
+                    if (cat != null)
+                        nexus.setCatalyst(cat);
+                }
                 nexusMap.put(key, nexus);
             }
         }
@@ -147,6 +162,16 @@ public class NexusListener implements Listener {
                 return this.x == key.x && this.y == key.y && this.z == key.z;
             }
             return false;
+        }
+
+
+        @EventHandler
+        public void restoreInvasionEntities(EntitiesLoadEvent event){
+            List<Entity> entities = event.getEntities();
+            for (Entity entity : entities){
+                if (entity instanceof Mob)
+                    
+            }
         }
     }
 }

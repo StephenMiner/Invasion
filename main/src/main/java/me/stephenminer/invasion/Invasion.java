@@ -12,11 +12,17 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public final class Invasion extends JavaPlugin {
+    public static Map<UUID, Nexus> nexusMap;
 
     @Override
     public void onEnable() {
         // Plugin startup logic
+        Invasion.nexusMap = new HashMap<>();
         registerEvents();
         addCommands();
     }
