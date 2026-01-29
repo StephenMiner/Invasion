@@ -35,6 +35,8 @@ public class IZombie extends Zombie implements InvasionMob {
         this.setPos(loc.getX(), loc.getY(), loc.getZ());
         this.nexusUUID = nexusUUID;
         this.level().addFreshEntity(this);
+        implantMobType();
+        implantNexusData();
     }
 
     public IZombie(Location loc, float health) {

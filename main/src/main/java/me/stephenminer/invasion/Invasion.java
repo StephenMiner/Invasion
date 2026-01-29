@@ -19,6 +19,7 @@ import java.util.UUID;
 public final class Invasion extends JavaPlugin {
     public static Map<UUID, Nexus> nexusMap;
 
+
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -52,4 +53,6 @@ public final class Invasion extends JavaPlugin {
         item.setItemMeta(meta);
         return item;
     }
+
+
 }

@@ -1,6 +1,7 @@
 package me.stephenminer.invasion.listener;
 
 import me.stephenminer.invasion.Invasion;
+import me.stephenminer.invasion.entity.InvasionMob;
 import me.stephenminer.invasion.entity.MobType;
 import me.stephenminer.invasion.nexus.Nexus;
 import org.bukkit.Bukkit;
@@ -27,10 +28,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 public class NexusListener implements Listener {
     private final Invasion plugin;
@@ -93,7 +92,8 @@ public class NexusListener implements Listener {
         if (!container.has(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY)) return;
         byte[] posArr = container.get(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY);
         ByteArrayInputStream inStream = new ByteArrayInputStream(posArr);
-        while (inStream.available() > 3){
+        byte[] uuidPortion = Arrays.copyOfRange(posArr,4, 19);
+        while (inStream.available() > 19){ // 3 for pos, 1 for cat, 16 for UUID 20 total
             int d1 = inStream.read();
             int d2 = inStream.read();
             int d3 = inStream.read();
@@ -102,7 +102,16 @@ public class NexusListener implements Listener {
             Block b = unpackPosition(chunk, data);
             BlockKey key = new BlockKey(b.getX(), b.getY(), b.getZ());
             if (!nexusMap.containsKey(key)) {
-                Nexus nexus = new Nexus(b.getLocation(), 200);
+                byte[] uuidBytes = new byte[16];
+                for (int i = 0; i < 16; i++){
+                    // since we are within #isAvailable check, this should be a safe cast
+                    uuidBytes[i] = (byte) inStream.read();
+                }
+                ByteBuffer buff = ByteBuffer.wrap(uuidBytes);
+                long high = buff.getLong();
+                long low = buff.getLong();
+                UUID uuid = new UUID(high, low);
+                Nexus nexus = new Nexus(b.getLocation(), 200, 200, uuid);
                 if (catType != 0){
                     Nexus.Catalyst cat = Nexus.Catalyst.fromByte((byte) catType);
                     if (cat != null)
@@ -110,7 +119,9 @@ public class NexusListener implements Listener {
                 }
                 nexusMap.put(key, nexus);
             }
+
         }
+
     }
 
 
@@ -169,9 +180,18 @@ public class NexusListener implements Listener {
         public void restoreInvasionEntities(EntitiesLoadEvent event){
             List<Entity> entities = event.getEntities();
             for (Entity entity : entities){
-                if (entity instanceof Mob)
+                if (entity instanceof Mob){
+                    Mob mob = (Mob) entity;
+                    PersistentDataContainer container = mob.getPersistentDataContainer();
+                    if (!container.has(InvasionMob.NEXUS_KEY, PersistentDataType.BYTE_ARRAY)) continue;
+                    byte[] uuidBytes = container.get(InvasionMob.NEXUS_KEY, PersistentDataType.BYTE_ARRAY);
+                    ByteBuffer buff = ByteBuffer.wrap(uuidBytes);
+                    UUID uuid = new UUID(buff.getLong(), buff.getLong());
+                    InvasionMob invasionMob = MobType.copy(mob, uuid);
+                }
                     
             }
         }
     }
+
 }

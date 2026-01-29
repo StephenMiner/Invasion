@@ -41,6 +41,7 @@ public class Nexus {
 
     public Location loc(){ return loc; }
     public Catalyst catalyst(){ return catalyst; }
+    public UUID uuid(){ return uuid; }
 
 
     public enum Catalyst{
