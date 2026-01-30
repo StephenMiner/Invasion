@@ -84,6 +84,14 @@ public class NexusListener implements Listener {
         }
         if (nexus != null)
             outStream.write(nexus.catalyst().encoding());
+        ByteBuffer buff = ByteBuffer.wrap(new byte[20]);
+        buff.putInt(nexus.health());
+        UUID uuid = nexus.uuid();
+        buff.putLong(uuid.getMostSignificantBits());
+        buff.putLong(uuid.getLeastSignificantBits());
+        try {
+            outStream.write(buff.array());
+        }catch (IOException e){ e.printStackTrace(); }
         container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
     }
 
@@ -93,7 +101,7 @@ public class NexusListener implements Listener {
         byte[] posArr = container.get(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY);
         ByteArrayInputStream inStream = new ByteArrayInputStream(posArr);
         byte[] uuidPortion = Arrays.copyOfRange(posArr,4, 19);
-        while (inStream.available() > 19){ // 3 for pos, 1 for cat, 16 for UUID 20 total
+        while (inStream.available() > 23){ // 3 for pos, 1 for cat, 4 for hp, 16 for UUID 24 total
             int d1 = inStream.read();
             int d2 = inStream.read();
             int d3 = inStream.read();
@@ -102,16 +110,17 @@ public class NexusListener implements Listener {
             Block b = unpackPosition(chunk, data);
             BlockKey key = new BlockKey(b.getX(), b.getY(), b.getZ());
             if (!nexusMap.containsKey(key)) {
-                byte[] uuidBytes = new byte[16];
+                byte[] complexBytes = new byte[20];
                 for (int i = 0; i < 16; i++){
                     // since we are within #isAvailable check, this should be a safe cast
-                    uuidBytes[i] = (byte) inStream.read();
+                    complexBytes[i] = (byte) inStream.read();
                 }
-                ByteBuffer buff = ByteBuffer.wrap(uuidBytes);
+                ByteBuffer buff = ByteBuffer.wrap(complexBytes);
+                int hp = buff.getInt();
                 long high = buff.getLong();
                 long low = buff.getLong();
                 UUID uuid = new UUID(high, low);
-                Nexus nexus = new Nexus(b.getLocation(), 200, 200, uuid);
+                Nexus nexus = new Nexus(b.getLocation(), 200, hp, uuid);
                 if (catType != 0){
                     Nexus.Catalyst cat = Nexus.Catalyst.fromByte((byte) catType);
                     if (cat != null)
