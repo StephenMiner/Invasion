@@ -76,8 +76,8 @@ public enum MobType {
         }
         if (mob != null){
             if (Invasion.nexusMap.containsKey(uuid)) {
-                Nexus target = Invasion.nexusMap.get(uuid);
-                mob.setTargetPos((int) target.loc().getX(), (int) target.loc().getY(), (int) target.loc().getZ());
+              //  Nexus target = Invasion.nexusMap.get(uuid);
+               // mob.setTargetPos((int) target.loc().getX(), (int) target.loc().getY(), (int) target.loc().getZ());
             }
         }
         return mob;

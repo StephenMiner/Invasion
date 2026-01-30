@@ -19,7 +19,6 @@ public interface InvasionMob {
     default void implantMobType(){
         Mob mob = bukkitMob();
         PersistentDataContainer container = mob.getPersistentDataContainer();
-        Invasion plugin = JavaPlugin.getPlugin(Invasion.class);
         container.set(InvasionMob.MOB_TYPE_KEY, PersistentDataType.STRING, mobType().name());
     }
 

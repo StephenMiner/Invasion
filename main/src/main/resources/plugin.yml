@@ -4,3 +4,4 @@ main: me.stephenminer.invasion.Invasion
 api-version: '1.20'
 commands:
   testnexus:
+  clearnexusdata:

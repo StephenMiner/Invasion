@@ -53,6 +53,7 @@ public class IZombie extends Zombie implements InvasionMob {
     public void tick(){
         super.tick();
         if (nexus == null && Invasion.nexusMap.containsKey(nexusUUID)){
+            System.out.println(33333);
             this.nexus = Invasion.nexusMap.get(nexusUUID);
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());

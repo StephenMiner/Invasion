@@ -15,6 +15,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.Mob;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -48,10 +49,13 @@ public class NexusListener implements Listener {
         PersistentDataContainer container = meta.getPersistentDataContainer();
         if (!container.has(Nexus.ITEM_KEY, PersistentDataType.STRING)) return;
         Nexus nexus = new Nexus(event.getBlock().getLocation(), 200);
+        Bukkit.broadcastMessage(nexus.uuid().toString());
         BlockKey key = new BlockKey(event.getBlock().getLocation());
         nexusMap.put(key, nexus);
         writeAdditionalPos(event.getBlock().getChunk(), event.getBlock().getLocation(), nexus);
     }
+
+
 
     @EventHandler
     public void loadNexus(ChunkLoadEvent event){
@@ -100,7 +104,6 @@ public class NexusListener implements Listener {
         if (!container.has(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY)) return;
         byte[] posArr = container.get(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY);
         ByteArrayInputStream inStream = new ByteArrayInputStream(posArr);
-        byte[] uuidPortion = Arrays.copyOfRange(posArr,4, 19);
         while (inStream.available() > 23){ // 3 for pos, 1 for cat, 4 for hp, 16 for UUID 24 total
             int d1 = inStream.read();
             int d2 = inStream.read();
@@ -111,7 +114,7 @@ public class NexusListener implements Listener {
             BlockKey key = new BlockKey(b.getX(), b.getY(), b.getZ());
             if (!nexusMap.containsKey(key)) {
                 byte[] complexBytes = new byte[20];
-                for (int i = 0; i < 16; i++){
+                for (int i = 0; i < 20; i++){
                     // since we are within #isAvailable check, this should be a safe cast
                     complexBytes[i] = (byte) inStream.read();
                 }
@@ -120,12 +123,11 @@ public class NexusListener implements Listener {
                 long high = buff.getLong();
                 long low = buff.getLong();
                 UUID uuid = new UUID(high, low);
+                Bukkit.broadcastMessage(uuid.toString());
                 Nexus nexus = new Nexus(b.getLocation(), 200, hp, uuid);
-                if (catType != 0){
-                    Nexus.Catalyst cat = Nexus.Catalyst.fromByte((byte) catType);
-                    if (cat != null)
-                        nexus.setCatalyst(cat);
-                }
+                Nexus.Catalyst cat = Nexus.Catalyst.fromByte((byte) catType);
+                if (cat != null)
+                    nexus.setCatalyst(cat);
                 nexusMap.put(key, nexus);
             }
 

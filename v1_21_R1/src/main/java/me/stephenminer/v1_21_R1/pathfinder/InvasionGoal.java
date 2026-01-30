@@ -60,6 +60,7 @@ public class InvasionGoal extends Goal {
 
     @Override
     public void tick(){
+        System.out.println(9999999);
         if (!digging && actionCooldown > 0){
             actionCooldown --;
         }

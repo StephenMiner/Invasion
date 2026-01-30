@@ -1,5 +1,6 @@
 package me.stephenminer.invasion;
 
+import me.stephenminer.invasion.commands.ClearNexusData;
 import me.stephenminer.invasion.commands.TestNexus;
 import me.stephenminer.invasion.listener.NexusListener;
 import me.stephenminer.invasion.nexus.Nexus;
@@ -40,6 +41,7 @@ public final class Invasion extends JavaPlugin {
 
     private void addCommands(){
         getCommand("testnexus").setExecutor(new TestNexus());
+        getCommand("clearnexusdata").setExecutor(new ClearNexusData());
     }
 
 

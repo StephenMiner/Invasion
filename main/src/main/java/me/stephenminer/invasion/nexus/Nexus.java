@@ -28,6 +28,7 @@ public class Nexus {
         this.maxHealth = maxHealth;
         this.health = health;
         this.uuid = uuid;
+        this.catalyst = Catalyst.NONE;
     }
 
 
@@ -46,12 +47,15 @@ public class Nexus {
 
 
     public enum Catalyst{
+        NONE((byte) 0),
         UNSTABLE((byte) 1),
         STABLE((byte) 2);
 
 
         public static Catalyst fromByte(byte encoding){
             switch (encoding){
+                case 0:
+                    return Catalyst.NONE;
                 case 1:
                     return Catalyst.UNSTABLE;
                 case 2:
