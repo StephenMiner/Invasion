@@ -58,6 +58,7 @@ public enum MobType {
     }
 
     public static InvasionMob instance(MobType type, Location loc, UUID uuid){
+        Bukkit.broadcastMessage("D: " + uuid.toString());
         InvasionMob mob;
         String packageName = "me.stephenminer";
         String ver = Bukkit.getServer().getBukkitVersion();
@@ -65,7 +66,7 @@ public enum MobType {
         try{
             switch (ver){
                 case "1.21":
-                    mob =  (InvasionMob) Class.forName(packageName + ".v1_21_R1." + type.id).getConstructor(Location.class, float.class).newInstance(loc, 20);
+                    mob =  (InvasionMob) Class.forName(packageName + ".v1_21_R1." + type.id).getConstructor(Location.class, float.class, UUID.class).newInstance(loc, 20, uuid);
                     break;
                 default:
                     mob = null;

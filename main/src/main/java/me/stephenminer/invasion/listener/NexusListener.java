@@ -7,11 +7,8 @@ import me.stephenminer.invasion.nexus.Nexus;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Mob;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -52,10 +49,20 @@ public class NexusListener implements Listener {
         Bukkit.broadcastMessage(nexus.uuid().toString());
         BlockKey key = new BlockKey(event.getBlock().getLocation());
         nexusMap.put(key, nexus);
+        Invasion.nexusMap.put(nexus.uuid(), nexus);
         writeAdditionalPos(event.getBlock().getChunk(), event.getBlock().getLocation(), nexus);
     }
 
 
+    @EventHandler
+    public void removeNexusBreak(BlockBreakEvent event){
+        Block block = event.getBlock();
+        BlockKey key = new BlockKey(block.getLocation());
+        if (!nexusMap.containsKey(key)) return;
+        Nexus nexus = nexusMap.remove(key);
+        Invasion.nexusMap.remove(nexus.uuid());
+        Bukkit.broadcastMessage("removed nexus");
+    }
 
     @EventHandler
     public void loadNexus(ChunkLoadEvent event){
@@ -129,6 +136,7 @@ public class NexusListener implements Listener {
                 if (cat != null)
                     nexus.setCatalyst(cat);
                 nexusMap.put(key, nexus);
+                Invasion.nexusMap.put(uuid, nexus);
             }
 
         }
@@ -198,6 +206,7 @@ public class NexusListener implements Listener {
                     byte[] uuidBytes = container.get(InvasionMob.NEXUS_KEY, PersistentDataType.BYTE_ARRAY);
                     ByteBuffer buff = ByteBuffer.wrap(uuidBytes);
                     UUID uuid = new UUID(buff.getLong(), buff.getLong());
+                    plugin.getLogger().info("Thing happening");
                     InvasionMob invasionMob = MobType.copy(mob, uuid);
                 }
                     

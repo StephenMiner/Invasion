@@ -39,6 +39,7 @@ public class IZombie extends Zombie implements InvasionMob {
         implantNexusData();
     }
 
+    /*
     public IZombie(Location loc, float health) {
         super(EntityType.ZOMBIE, ((CraftWorld) loc.getWorld()).getHandle());
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
@@ -48,12 +49,13 @@ public class IZombie extends Zombie implements InvasionMob {
         this.level().addFreshEntity(this);
     }
 
+     */
+
 
     @Override
     public void tick(){
         super.tick();
         if (nexus == null && Invasion.nexusMap.containsKey(nexusUUID)){
-            System.out.println(33333);
             this.nexus = Invasion.nexusMap.get(nexusUUID);
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
