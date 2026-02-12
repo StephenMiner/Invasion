@@ -28,7 +28,6 @@ public class InvasionPathfinder {
         Node startNode = new Node(null, start, 0, 0);
         open.push(startNode);
         int nodes = 0;
-
         while (!open.empty()){
             Node current = open.pop();
             //if (current.closed) continue;
@@ -41,12 +40,12 @@ public class InvasionPathfinder {
             if (best != null && !current.equals(best)) continue;
             BlockPos[] neighbors = neighbors(current.pos);
             for (BlockPos pos : neighbors){
-                double dy = pos.getY() - current.y;
+                int dy = pos.getY() - current.y;
                 BlockPos aboveHead = current.pos.above();
 
               //  boolean digAbove = dy > 0 && !walkable(world.getBlockState(aboveHead));
               //  boolean digFront = dy < 0 && !walkable(world.getBlockState(current.pos.));
-                BlockPos digExtra = digExtraCeiling((int) dy, current.pos, pos);
+                BlockPos digExtra = digExtraCeiling(dy, current.pos, pos);
                 BlockPos above = pos.above();
                 BlockPos below = pos.below();
                 BlockState state = world.getBlockState(pos);
