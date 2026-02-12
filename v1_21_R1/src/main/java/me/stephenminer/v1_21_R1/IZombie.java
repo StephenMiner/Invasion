@@ -4,6 +4,7 @@ import me.stephenminer.invasion.Invasion;
 import me.stephenminer.invasion.entity.InvasionMob;
 import me.stephenminer.invasion.entity.MobType;
 import me.stephenminer.invasion.nexus.Nexus;
+import me.stephenminer.v1_21_R1.pathfinder.AttackNexusGoal;
 import me.stephenminer.v1_21_R1.pathfinder.InvasionGoal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
@@ -20,11 +21,13 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
 import org.bukkit.entity.Mob;
+import org.checkerframework.checker.units.qual.A;
 
 import java.util.UUID;
 
 public class IZombie extends Zombie implements InvasionMob {
     private InvasionGoal goal;
+    private AttackNexusGoal attckNexusGoal;
     private UUID nexusUUID;
     private Nexus nexus;
 
@@ -56,19 +59,24 @@ public class IZombie extends Zombie implements InvasionMob {
     public void tick(){
         super.tick();
         if (nexus == null && Invasion.nexusMap.containsKey(nexusUUID)){
+            System.out.println(9000);
             this.nexus = Invasion.nexusMap.get(nexusUUID);
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         }
+        if (attckNexusGoal.nexusUUID() == null)
+            attckNexusGoal.setNexusUUID(this.nexusUUID);
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0,new FloatGoal(this));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0, false));
+        attckNexusGoal = new AttackNexusGoal(this);
+        this.goalSelector.addGoal(2, attckNexusGoal);
+        this.goalSelector.addGoal(3, new ZombieAttackGoal(this, 1.0, false));
         this.goal = new InvasionGoal(this);
-        this.goalSelector.addGoal(3, goal);
+        this.goalSelector.addGoal(4, goal);
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers(new Class[]{ZombifiedPiglin.class}));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));

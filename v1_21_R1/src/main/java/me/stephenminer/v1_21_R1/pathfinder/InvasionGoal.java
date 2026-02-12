@@ -1,6 +1,5 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
-import me.stephenminer.invasion.nexus.Nexus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -11,9 +10,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.UUID;
 
 public class InvasionGoal extends Goal {
     protected final Mob mob;
@@ -60,7 +57,6 @@ public class InvasionGoal extends Goal {
 
     @Override
     public void tick(){
-        System.out.println(9999999);
         if (!digging && actionCooldown > 0){
             actionCooldown --;
         }

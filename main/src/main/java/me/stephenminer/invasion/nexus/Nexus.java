@@ -40,6 +40,17 @@ public class Nexus {
         this.catalyst = catalyst;
     }
 
+    public void setHealth(int health){
+        this.health = health;
+        checkDeath();
+    }
+
+    private void checkDeath(){
+        if (this.health <= 0){
+            //TODO: IMPL death mechanics
+        }
+    }
+
     public Location loc(){ return loc; }
     public Catalyst catalyst(){ return catalyst; }
     public UUID uuid(){ return uuid; }
