@@ -64,8 +64,6 @@ public class IZombie extends Zombie implements InvasionMob {
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         }
-        if (attckNexusGoal.nexusUUID() == null)
-            attckNexusGoal.setNexusUUID(this.nexusUUID);
     }
 
     @Override

@@ -27,9 +27,10 @@ public class AttackNexusGoal extends Goal {
 
     @Override
     public boolean canUse(){
+        if (this.nexusUUID == null)
+            this.nexusUUID = ((InvasionMob) mob).nexusUUID();
         if (nexus == null && Invasion.nexusMap.containsKey(nexusUUID)) {
             nexus = Invasion.nexusMap.get(nexusUUID);
-            System.out.println(2000);
         }
         return canAttack();
     }
@@ -41,13 +42,10 @@ public class AttackNexusGoal extends Goal {
 
     @Override
     public void tick(){
-        System.out.println(1);
         if (canAttack()){
-            System.out.println(2);
             if (attackTicks > 0)
                 attackTicks--;
             else {
-                System.out.println(3);
                 mob.swing(InteractionHand.MAIN_HAND);
                 attack();
             }

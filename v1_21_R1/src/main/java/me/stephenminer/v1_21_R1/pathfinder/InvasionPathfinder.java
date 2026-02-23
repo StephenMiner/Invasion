@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
@@ -40,51 +41,8 @@ public class InvasionPathfinder {
             if (best != null && !current.equals(best)) continue;
             BlockPos[] neighbors = neighbors(current.pos);
             for (BlockPos pos : neighbors){
-                int dy = pos.getY() - current.y;
-                BlockPos aboveHead = current.pos.above();
-
-              //  boolean digAbove = dy > 0 && !walkable(world.getBlockState(aboveHead));
-              //  boolean digFront = dy < 0 && !walkable(world.getBlockState(current.pos.));
-                BlockPos digExtra = digExtraCeiling(dy, current.pos, pos);
-                BlockPos above = pos.above();
-                BlockPos below = pos.below();
-                BlockState state = world.getBlockState(pos);
-                BlockState stateAbove = world.getBlockState(above);
-                BlockState stateBelow = world.getBlockState(below);
-                Node node = null;
-                double digCost = 0;
-                if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null){
-                        node.digTargets = new BlockPos[]{digExtra};
-                        digCost += determineDigCost(node.digTargets);
-                    }
-                }else if (walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig(state)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, pos};
-                    else
-                        node.digTargets = new BlockPos[]{pos};
-                    digCost += determineDigCost(node.digTargets);
-                }else if (!walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig(stateAbove)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, above};
-                    else node.digTargets = new BlockPos[]{above};
-                    digCost += determineDigCost(node.digTargets);
-                }else if (!walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig( stateAbove) || !canDig(state)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, above, pos};
-                    else node.digTargets = new BlockPos[]{above, pos};
-                    digCost += determineDigCost(node.digTargets);
-                }
+               Node node = evalPosition(pos, goal, current);
                 if (node == null) continue;
-                if (digCost < 0) continue;
-                node.cost += current.cost + digCost;
                 long key = pos.asLong();
                 Node onFile = visited.get(key);
                 if (onFile == null || node.cost < onFile.cost){
@@ -94,6 +52,89 @@ public class InvasionPathfinder {
             }
         }
         return null;
+    }
+
+    /*
+    The reason for passing in BlockStates is to avoid recapturing them for no reason
+     */
+    private Node ladderCases(BlockPos pos, BlockPos above, BlockPos goal, BlockState posState, BlockState aboveState, BlockState belowState, Node current, boolean digging){
+        Node node = null;
+        if (current.pos.above().equals(pos)){
+            if (isLadder(posState) && walkable(aboveState)){
+                node = buildNode(current, pos, goal);
+                node.cost *= 1.2;
+                node.cost += current.cost;
+            }
+            if (digging && isLadder(posState) && !walkable(aboveState)){
+                // Might be a bit scuffed
+                node = buildNode(current, pos, goal);
+                node.cost *= 1.2;
+                node.cost += current.cost;
+                node.digTargets = new BlockPos[]{above};
+                node.cost += determineDigCost(node.digTargets);
+            }
+        }
+
+        if (current.pos.below().equals(pos)){
+            if (isLadder(posState) && walkable(belowState)){
+                node = buildNode(current, pos, goal);
+                node.cost *= 1.2;
+                node.cost += current.cost;
+            }
+        }
+        return node;
+    }
+
+    private Node evalPosition(BlockPos pos, BlockPos goal, Node current){
+        int dy = pos.getY() - current.y;
+        BlockPos aboveHead = current.pos.above();
+
+        //  boolean digAbove = dy > 0 && !walkable(world.getBlockState(aboveHead));
+        //  boolean digFront = dy < 0 && !walkable(world.getBlockState(current.pos.));
+        BlockPos digExtra = digExtraCeiling(dy, current.pos, pos);
+        BlockPos above = pos.above();
+        BlockPos below = pos.below();
+        BlockState state = world.getBlockState(pos);
+        BlockState stateAbove = world.getBlockState(above);
+        BlockState stateBelow = world.getBlockState(below);
+        Node node = null;
+        double digCost = 0;
+        Node ladderNode = ladderCases(pos, above, goal, state, stateAbove, stateBelow, current, true);
+        if (ladderNode != null || pos.equals(current.pos.above()) || pos.equals(current.pos.below())) {
+            return ladderNode;
+        }
+        if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
+            node = buildNode(current, pos, goal);
+            if (digExtra != null){
+                node.digTargets = new BlockPos[]{digExtra};
+                digCost += determineDigCost(node.digTargets);
+            }
+        }else if (walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
+            if (!canDig(state)) return null;
+            node = buildNode(current, pos, goal);
+            if (digExtra != null)
+                node.digTargets = new BlockPos[]{digExtra, pos};
+            else
+                node.digTargets = new BlockPos[]{pos};
+            digCost += determineDigCost(node.digTargets);
+        }else if (!walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
+            if (!canDig(stateAbove)) return null;
+            node = buildNode(current, pos, goal);
+            if (digExtra != null)
+                node.digTargets = new BlockPos[]{digExtra, above};
+            else node.digTargets = new BlockPos[]{above};
+            digCost += determineDigCost(node.digTargets);
+        }else if (!walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
+            if (!canDig( stateAbove) || !canDig(state)) return null;
+            node = buildNode(current, pos, goal);
+            if (digExtra != null)
+                node.digTargets = new BlockPos[]{digExtra, above, pos};
+            else node.digTargets = new BlockPos[]{above, pos};
+            digCost += determineDigCost(node.digTargets);
+        }
+
+        if (node != null) node.cost += current.cost + digCost;
+        return node;
     }
 
 
@@ -134,7 +175,7 @@ public class InvasionPathfinder {
     }
 
     private BlockPos[] neighbors(BlockPos pos){
-        BlockPos[] positions = new BlockPos[12];
+        BlockPos[] positions = new BlockPos[14];
         positions[0] = pos.north();
         positions[1] = pos.south();
         positions[2] = pos.east();
@@ -149,11 +190,14 @@ public class InvasionPathfinder {
         positions[9] = pos.east().below();
         positions[10] = pos.south().below();
         positions[11] = pos.west().below();
+
+        positions[12] = pos.above();
+        positions[13] = pos.below();
         return positions;
     }
 
     private boolean walkable(BlockState state){
-        return state.isAir() || state.canBeReplaced();
+        return state.isAir() || state.canBeReplaced() || isLadder(state);
     }
 
     private List<Node> reconstructPath(Node node){
@@ -176,6 +220,10 @@ public class InvasionPathfinder {
 
     public boolean isSolid(BlockPos pos, BlockState state){
         return !state.isAir() && !state.getCollisionShape(world, pos).isEmpty();
+    }
+
+    public boolean isLadder(BlockState state){
+        return state.getBlock() instanceof LadderBlock;
     }
 
     public boolean canDig(BlockState state){
