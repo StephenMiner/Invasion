@@ -7,10 +7,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class InvasionPathfinder {
     private final Level world;
@@ -31,21 +28,76 @@ public class InvasionPathfinder {
         int nodes = 0;
         while (!open.empty()){
             Node current = open.pop();
+            boolean critNode = false;
+            //System.out.println(current.pos);
             //if (current.closed) continue;
           //  current.closed = true;
-
-            if (current.pos().equals(goal)) {
+            if (current.pos.getY() == 71 && current.pos.getX() == 132 && current.pos.getZ() == -27){
+                critNode = true;
+            }
+            if (current.pos().equals(goal) || current.pos.equals(goal.above())) {
+                System.out.println(goal);
                 return reconstructPath(current);
             }
             Node best = visited.get(current.pos.asLong());
-            if (best != null && !current.equals(best)) continue;
+            if (best != null && !current.pos.equals(best.pos)) continue;
             BlockPos[] neighbors = neighbors(current.pos);
             for (BlockPos pos : neighbors){
-               Node node = evalPosition(pos, goal, current);
+                /*
+                double dy = pos.getY() - current.y;
+                BlockPos aboveHead = current.pos.above();
+
+                //  boolean digAbove = dy > 0 && !walkable(world.getBlockState(aboveHead));
+                //  boolean digFront = dy < 0 && !walkable(world.getBlockState(current.pos.));
+                BlockPos digExtra = digExtraCeiling((int) dy, current.pos, pos);
+                BlockPos above = pos.above();
+                BlockPos below = pos.below();
+                BlockState state = world.getBlockState(pos);
+                BlockState stateAbove = world.getBlockState(above);
+                BlockState stateBelow = world.getBlockState(below);
+                Node node = null;
+                double digCost = 0;
+                if (!world.isInWorldBounds(pos)) continue;
+                if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
+                    node = buildNode(current, pos, goal);
+                    if (digExtra != null){
+                        node.digTargets = new BlockPos[]{digExtra};
+                        digCost += determineDigCost(node.digTargets);
+                    }
+                }else if (walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
+                    if (!canDig(state)) continue;
+                    node = buildNode(current, pos, goal);
+                    if (digExtra != null)
+                        node.digTargets = new BlockPos[]{digExtra, pos};
+                    else
+                        node.digTargets = new BlockPos[]{pos};
+                    digCost += determineDigCost(node.digTargets);
+                }else if (!walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
+                    if (!canDig(stateAbove)) continue;
+                    node = buildNode(current, pos, goal);
+                    if (digExtra != null)
+                        node.digTargets = new BlockPos[]{digExtra, above};
+                    else node.digTargets = new BlockPos[]{above};
+                    digCost += determineDigCost(node.digTargets);
+                }else if (!walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
+                    if (!canDig( stateAbove) || !canDig(state)) continue;
+                    node = buildNode(current, pos, goal);
+                    if (digExtra != null)
+                        node.digTargets = new BlockPos[]{digExtra, above, pos};
+                    else node.digTargets = new BlockPos[]{above, pos};
+                    digCost += determineDigCost(node.digTargets);
+                }
+
+                 */
+
+                Node node = evalPosition(pos, goal, current);
                 if (node == null) continue;
                 long key = pos.asLong();
                 Node onFile = visited.get(key);
-                if (onFile == null || node.cost < onFile.cost){
+               // System.out.println(node.toString());
+               // if (critNode)
+                    //System.out.println(node.toString());
+                if (onFile == null || node.cost < onFile.cost) {
                     visited.put(key, node);
                     open.push(node);
                 }
@@ -59,26 +111,25 @@ public class InvasionPathfinder {
      */
     private Node ladderCases(BlockPos pos, BlockPos above, BlockPos goal, BlockState posState, BlockState aboveState, BlockState belowState, Node current, boolean digging){
         Node node = null;
+        double mod = 0.5;
         if (current.pos.above().equals(pos)){
             if (isLadder(posState) && walkable(aboveState)){
                 node = buildNode(current, pos, goal);
-                node.cost *= 1.2;
+                node.cost *= mod;
                 node.cost += current.cost;
             }
-            if (digging && isLadder(posState) && !walkable(aboveState)){
+            else if (digging && isLadder(posState) && !walkable(aboveState)){
                 // Might be a bit scuffed
                 node = buildNode(current, pos, goal);
-                node.cost *= 1.2;
+                node.cost *= mod;
                 node.cost += current.cost;
                 node.digTargets = new BlockPos[]{above};
                 node.cost += determineDigCost(node.digTargets);
             }
-        }
-
-        if (current.pos.below().equals(pos)){
+        }else if (current.pos.below().equals(pos)){
             if (isLadder(posState) && walkable(belowState)){
                 node = buildNode(current, pos, goal);
-                node.cost *= 1.2;
+                node.cost *= mod;
                 node.cost += current.cost;
             }
         }
@@ -94,6 +145,7 @@ public class InvasionPathfinder {
         BlockPos digExtra = digExtraCeiling(dy, current.pos, pos);
         BlockPos above = pos.above();
         BlockPos below = pos.below();
+
         BlockState state = world.getBlockState(pos);
         BlockState stateAbove = world.getBlockState(above);
         BlockState stateBelow = world.getBlockState(below);
@@ -101,6 +153,9 @@ public class InvasionPathfinder {
         double digCost = 0;
         Node ladderNode = ladderCases(pos, above, goal, state, stateAbove, stateBelow, current, true);
         if (ladderNode != null || pos.equals(current.pos.above()) || pos.equals(current.pos.below())) {
+          //  if (ladderNode != null && ladderNode.x == 132 && ladderNode.y == 59 && ladderNode.z == -27)
+          //      System.out.println("LADDER: " + ladderNode);
+           // else System.out.println(23);
             return ladderNode;
         }
         if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
@@ -133,7 +188,10 @@ public class InvasionPathfinder {
             digCost += determineDigCost(node.digTargets);
         }
 
+        if (digCost < 0) return null;
         if (node != null) node.cost += current.cost + digCost;
+        if (node != null && node.pos.getX() == 132 && node.pos.getY() == 59 && node.pos.getZ() == -27 )
+            System.out.println(node);
         return node;
     }
 
@@ -151,7 +209,7 @@ public class InvasionPathfinder {
             if (world.getBlockState(pos).destroySpeed < 0) return -1;
             sum += world.getBlockState(pos).destroySpeed;
         }
-        return 0.5f * sum;
+        return  0.5f * sum;
     }
 
 
