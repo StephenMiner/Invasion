@@ -7,6 +7,7 @@ import me.stephenminer.invasion.nexus.Nexus;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
@@ -16,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -62,11 +64,30 @@ public class NexusListener implements Listener {
         Nexus nexus = nexusMap.remove(key);
         Invasion.nexusMap.remove(nexus.uuid());
         Bukkit.broadcastMessage("removed nexus");
+
+        Chunk chunk = block.getChunk();
+        resetChunkData(chunk);
+        ByteArrayOutputStream outStream = updateNexusChunk(chunk);
+        if (outStream.size() == 0) return;
+        System.out.println(9999);
+        PersistentDataContainer container = chunk.getPersistentDataContainer();
+        container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
     }
 
     @EventHandler
     public void loadNexus(ChunkLoadEvent event){
          readChunkData(event.getChunk());
+    }
+
+    @EventHandler
+    public void handleUnloads(ChunkUnloadEvent event){
+        Chunk chunk = event.getChunk();
+        PersistentDataContainer container = chunk.getPersistentDataContainer();
+        if (!container.has(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY)) return;
+        resetChunkData(chunk);
+        ByteArrayOutputStream outStream = updateNexusChunk(chunk);
+        if (outStream.size() == 0) return;
+        container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
     }
 
     @EventHandler
@@ -78,6 +99,23 @@ public class NexusListener implements Listener {
         }
     }
 
+    private ByteArrayOutputStream updateNexusChunk(Chunk chunk){
+        Collection<Nexus> nexuses = Invasion.nexusMap.values();
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        World world = chunk.getWorld();
+        for (Nexus nexus : nexuses){
+            World nexusWorld = nexus.loc().getWorld();
+            Chunk nexusChunk = nexus.loc().getChunk();
+            if (world.getUID().equals(nexusWorld.getUID()) && chunk.getX() == nexusChunk.getX() && chunk.getZ() == nexusChunk.getZ())
+                writeNexusBytes(outStream ,nexus.loc(), nexus);
+        }
+        return outStream;
+    }
+
+    public void resetChunkData(Chunk chunk){
+        PersistentDataContainer container = chunk.getPersistentDataContainer();
+        container.remove(Nexus.POS_KEY);
+    }
 
     public void writeAdditionalPos(Chunk chunk, Location loc, Nexus nexus){
         PersistentDataContainer container = chunk.getPersistentDataContainer();
@@ -88,11 +126,12 @@ public class NexusListener implements Listener {
         try {
             if (posArr != null)
                 outStream.write(posArr);
-            int pos = packPosition(loc);
-            writePos(outStream, pos);
+        //    int pos = packPosition(loc);
+            //writePos(outStream, pos);
         }catch (IOException e){
             e.printStackTrace();
         }
+        /*
         if (nexus != null)
             outStream.write(nexus.catalyst().encoding());
         ByteBuffer buff = ByteBuffer.wrap(new byte[20]);
@@ -103,7 +142,24 @@ public class NexusListener implements Listener {
         try {
             outStream.write(buff.array());
         }catch (IOException e){ e.printStackTrace(); }
+         */
+        writeNexusBytes(outStream, loc,  nexus);
         container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
+    }
+
+    public void writeNexusBytes(ByteArrayOutputStream outStream, Location loc, Nexus nexus){
+         int pos = packPosition(nexus.loc());
+         writePos(outStream, pos);
+         if (nexus != null)
+             outStream.write(nexus.catalyst().encoding());
+         ByteBuffer buff = ByteBuffer.wrap(new byte[20]);
+         buff.putInt(nexus.health());
+         UUID uuid = nexus.uuid();
+         buff.putLong(uuid.getMostSignificantBits());
+         buff.putLong(uuid.getLeastSignificantBits());
+         try {
+             outStream.write(buff.array());
+         }catch (IOException e){ e.printStackTrace(); }
     }
 
     public void readChunkData(Chunk chunk){
@@ -136,6 +192,7 @@ public class NexusListener implements Listener {
                 if (cat != null)
                     nexus.setCatalyst(cat);
                 nexusMap.put(key, nexus);
+                System.out.println(nexus.loc());
                 Invasion.nexusMap.put(uuid, nexus);
             }
 
