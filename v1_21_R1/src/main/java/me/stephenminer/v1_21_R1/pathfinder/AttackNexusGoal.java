@@ -57,7 +57,7 @@ public class AttackNexusGoal extends Goal {
         if (nexus == null) return false;
         Location loc = nexus.loc();
         double dist = mob.distanceToSqr(loc.getX(), loc.getY(), loc.getZ());
-        System.out.println(dist);
+       // System.out.println(dist);
         return dist <= 2*2;
     }
 
