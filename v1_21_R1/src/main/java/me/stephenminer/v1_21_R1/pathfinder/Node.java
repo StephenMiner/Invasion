@@ -2,7 +2,6 @@ package me.stephenminer.v1_21_R1.pathfinder;
 
 import net.minecraft.core.BlockPos;
 
-import java.util.Objects;
 
 public class Node {
     protected Node parent;
@@ -44,5 +43,10 @@ public class Node {
             return this.x == node.x && this.y == node.y && this.z == node.z && this.cost == node.cost && this.heuristic == node.heuristic;
         }
         return false;
+    }
+
+    @Override
+    public String toString(){
+        return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic;
     }
 }
