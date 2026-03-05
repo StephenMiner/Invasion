@@ -21,7 +21,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
 import org.bukkit.entity.Mob;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.UUID;
 
@@ -59,7 +58,7 @@ public class IZombie extends Zombie implements InvasionMob {
     public void tick(){
         super.tick();
         if (nexus == null && Invasion.nexusMap.containsKey(nexusUUID)){
-            System.out.println(9000);
+           // System.out.println(9000);
             this.nexus = Invasion.nexusMap.get(nexusUUID);
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
