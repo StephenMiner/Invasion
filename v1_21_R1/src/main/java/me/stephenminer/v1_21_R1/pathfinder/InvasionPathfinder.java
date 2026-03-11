@@ -124,7 +124,9 @@ public class InvasionPathfinder {
                 node.cost *= mod;
                 node.cost += current.cost;
                 node.digTargets = new BlockPos[]{above};
-                node.cost += determineDigCost(node.digTargets);
+                double digCost = determineDigCost(node.digTargets);
+                if (digCost < 1) return null;
+                node.cost += digCost;
             }
         }else if (current.pos.below().equals(pos)){
             if (isLadder(posState) && walkable(belowState)){
@@ -190,8 +192,6 @@ public class InvasionPathfinder {
 
         if (digCost < 0) return null;
         if (node != null) node.cost += current.cost + digCost;
-        if (node != null && node.pos.getX() == 132 && node.pos.getY() == 59 && node.pos.getZ() == -27 )
-            System.out.println(node);
         return node;
     }
 
@@ -254,7 +254,7 @@ public class InvasionPathfinder {
         return positions;
     }
 
-    private boolean walkable(BlockState state){
+    public boolean walkable(BlockState state){
         return state.isAir() || state.canBeReplaced() || isLadder(state);
     }
 

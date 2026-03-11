@@ -63,6 +63,7 @@ public class IZombie extends Zombie implements InvasionMob {
             Location loc = nexus.loc();
             this.setTargetPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         }
+
     }
 
     @Override
@@ -128,4 +129,5 @@ public class IZombie extends Zombie implements InvasionMob {
     public Mob bukkitMob() {
         return (Mob) this.getBukkitEntity();
     }
+
 }

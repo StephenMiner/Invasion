@@ -1,7 +1,6 @@
 package me.stephenminer.invasion.entity;
 
 import me.stephenminer.invasion.Invasion;
-import me.stephenminer.invasion.nexus.Nexus;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Mob;

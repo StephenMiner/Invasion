@@ -1,5 +1,6 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
+import me.stephenminer.invasion.entity.InvasionMob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -7,12 +8,14 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Set;
 
 public class InvasionGoal extends Goal {
+    protected final InvasionMoveControl moveControl;
     protected final Mob mob;
     protected final int maxBuildTime = 40;
     protected BlockPos targetPos;
@@ -35,6 +38,7 @@ public class InvasionGoal extends Goal {
     public InvasionGoal(Mob mob){
         this.mob = mob;
         this.pathfinder = new InvasionPathfinder(mob.level(),2, Set.of());
+        this.moveControl = new InvasionMoveControl(mob);
     }
 
     @Override
@@ -102,17 +106,54 @@ public class InvasionGoal extends Goal {
             }
         }else{
             Vec3 nextPos = getEntityPosAtNode(mob, stepIndex);
-            mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
+            if (isOnLadder()){
+                Vec3 vec = nextPos.subtract(mob.position());
+               // moveControl.setWantedPosition(nextPos.x, nextPos.y, nextPos.z,1.0f);
+            }//else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
+
+            if (isOnLadder() && !isOnLadder(current.pos)) {
+                if (!blockPosValid(current.pos)){
+                    recalcPath();
+                    return;
+                }
+                double dx = current.x + 0.5 - mob.getX();
+                double dy = current.y + 0.5 - mob.getY();
+                double dz = current.z + 0.5 - mob.getZ();
+                mob.setDeltaMovement(0, 0, 0);
+                mob.setPos(mob.getX() + dx * 0.1, mob.getY() + dy*0.2, mob.getZ() + dz * 0.1);
+                // Ensure valid positioning
+            }else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
             if (mob.position().distanceToSqr(prevPos) < MAX_STUCK_THRESHHOLd){
                 mob.getMoveControl().setWantedPosition(current.pos.getX() + 0.5, current.pos.getY() + 0.5, current.pos.getZ() + 0.5, 1.0f);
                 stuck++;
             }else stuck = 0;
             if (mob.blockPosition().equals(current.pos)){
+                System.out.println(mob.blockPosition());
                 stepIndex++;
                 moveFlag = false;
                 stuck = 0;
             }
         }
+    }
+
+    private boolean blockPosValid(BlockPos pos){
+        Level level = mob.level();
+        BlockPos below = pos.below();
+        BlockState belowState = level.getBlockState(below);
+        BlockState currentState = level.getBlockState(pos);
+        BlockState aboveState = level.getBlockState(pos.above());
+        return pathfinder.isSolid(pos, belowState) && pathfinder.walkable(currentState) && pathfinder.walkable(aboveState);
+    }
+
+    private boolean isOnLadder(BlockPos pos){
+        BlockState state = this.mob.level().getBlockState(pos);
+        return state.is(Blocks.LADDER);
+    }
+
+    private boolean isOnLadder(){
+        BlockPos pos = this.mob.blockPosition();
+        BlockState state = this.mob.level().getBlockState(pos);
+        return state.is(Blocks.LADDER);
     }
 
     public Vec3 getEntityPosAtNode(Entity entity, int index){
