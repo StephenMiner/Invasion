@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 public class InvasionGoal extends Goal {
-    protected final InvasionMoveControl moveControl;
     protected final Mob mob;
     protected final int maxBuildTime = 40;
     protected BlockPos targetPos;
@@ -38,7 +37,6 @@ public class InvasionGoal extends Goal {
     public InvasionGoal(Mob mob){
         this.mob = mob;
         this.pathfinder = new InvasionPathfinder(mob.level(),2, Set.of());
-        this.moveControl = new InvasionMoveControl(mob);
     }
 
     @Override
