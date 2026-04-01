@@ -18,6 +18,12 @@ public class Nexus {
     private Catalyst catalyst;
     private int health, maxHealth;
 
+    public static final int SCAFFOLD_TIME = 250 * 20;
+
+    private int scaffoldCooldown;
+
+    private int scaffolds;
+
     public Nexus(Location loc, int maxHealth){
         this(loc, maxHealth, maxHealth, UUID.randomUUID());
     }
@@ -32,8 +38,18 @@ public class Nexus {
     }
 
 
-    public void testSpawn(Location l){
-        MobType.instance(MobType.IZOMBIE, l, this);
+    public void tick(){
+        checkDeath();
+        scaffoldCooldown--;
+
+        if (scaffoldCooldown <= 0){
+            scaffoldCooldown = Nexus.SCAFFOLD_TIME;
+        }
+    }
+
+
+    public void testSpawn(Location l, MobType type){
+        MobType.instance(type, l, this);
     }
 
     public void setCatalyst(Catalyst catalyst){
@@ -55,6 +71,7 @@ public class Nexus {
     public Catalyst catalyst(){ return catalyst; }
     public UUID uuid(){ return uuid; }
     public int health(){ return health; }
+
 
 
     public enum Catalyst{
@@ -80,9 +97,12 @@ public class Nexus {
 
         private Catalyst(byte encoding){
             this.encoding = encoding;
+
         }
 
 
         public byte encoding(){ return encoding; }
     }
+
+
 }
