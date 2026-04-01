@@ -1,5 +1,6 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
+import me.stephenminer.invasion.Invasion;
 import me.stephenminer.invasion.entity.InvasionMob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -8,6 +9,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -35,8 +37,12 @@ public class InvasionGoal extends Goal {
     protected static final double MAX_STUCK_THRESHHOLd = 0.05;
 
     public InvasionGoal(Mob mob){
+        this(mob, new InvasionPathfinder(mob.level(),2, Set.of()));
+    }
+
+    public InvasionGoal(Mob mob, InvasionPathfinder pathfinder){
         this.mob = mob;
-        this.pathfinder = new InvasionPathfinder(mob.level(),2, Set.of());
+        this.pathfinder = pathfinder;
     }
 
     @Override
@@ -96,8 +102,25 @@ public class InvasionGoal extends Goal {
                 mob.getNavigation().stop();
                 if (buildProg % 10 == 0)
                     mob.swing(InteractionHand.MAIN_HAND);
+                BlockPos pos = current.buildTargets[buildIndex];
+                BlockState state = current.buildMats[buildIndex];
+                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && pathfinder.walkable(state)) {
+                    // Someone placed a block where a walkable block was going to be placed
+                    recalcPath();
+                    return;
+                }
+                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && !pathfinder.walkable(state)){
+                    // Someone placed a solid block where a solid block was going to be placed, advance building one step
+                    buildIndex++;
+                    buildProg = 0;
+                    return;
+                }
                 if (buildProg < maxBuildTime) return;
-                level.setBlockAndUpdate(current.buildTargets[buildIndex], Blocks.OAK_PLANKS.defaultBlockState());
+                level.setBlockAndUpdate(current.buildTargets[buildIndex], current.buildMats[buildIndex]);
+                if (buildIndex == 1) {
+                    System.out.println(current.buildMats[buildIndex].getValue(LadderBlock.FACING));
+                    System.out.println("world " + level.getBlockState(current.pos).getValue(LadderBlock.FACING));
+                }
                 buildIndex++;
 
                 buildProg = 0;
@@ -109,7 +132,7 @@ public class InvasionGoal extends Goal {
                // moveControl.setWantedPosition(nextPos.x, nextPos.y, nextPos.z,1.0f);
             }//else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
 
-            if (isOnLadder() && !isOnLadder(current.pos)) {
+            if (isOnLadder()) {// && !isOnLadder(current.pos)
                 if (!blockPosValid(current.pos)){
                     recalcPath();
                     return;
@@ -125,6 +148,7 @@ public class InvasionGoal extends Goal {
                 mob.getMoveControl().setWantedPosition(current.pos.getX() + 0.5, current.pos.getY() + 0.5, current.pos.getZ() + 0.5, 1.0f);
                 stuck++;
             }else stuck = 0;
+            System.out.println(current);
             if (mob.blockPosition().equals(current.pos)){
                 System.out.println(mob.blockPosition());
                 stepIndex++;
