@@ -1,6 +1,7 @@
 package me.stephenminer.invasion;
 
 import me.stephenminer.invasion.commands.ClearNexusData;
+import me.stephenminer.invasion.commands.SpawnMonster;
 import me.stephenminer.invasion.commands.TestNexus;
 import me.stephenminer.invasion.entity.InvasionMob;
 import me.stephenminer.invasion.entity.MobType;
@@ -17,9 +18,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public final class Invasion extends JavaPlugin {
     public static Map<UUID, Nexus> nexusMap;
@@ -53,6 +52,9 @@ public final class Invasion extends JavaPlugin {
     private void addCommands(){
         getCommand("testnexus").setExecutor(new TestNexus());
         getCommand("clearnexusdata").setExecutor(new ClearNexusData());
+        SpawnMonster spawnCmd = new SpawnMonster();
+        getCommand("ispawn").setExecutor(spawnCmd);
+        getCommand("ispawn").setTabCompleter(spawnCmd);
     }
 
 
@@ -77,6 +79,17 @@ public final class Invasion extends JavaPlugin {
         UUID uuid = new UUID(buff.getLong(), buff.getLong());
         this.getLogger().info("Thing happening");
         InvasionMob invasionMob = MobType.copy(mob, uuid);
+    }
+
+    public List<String> filter(Collection<String> base, String match){
+        match = match.toLowerCase();
+        List<String> filtered = new ArrayList<>();
+        for (String entry : base){
+            String temp = ChatColor.stripColor(entry).toLowerCase();
+            if (!temp.contains(match)) continue;
+            filtered.add(entry);
+        }
+        return filtered;
     }
 
 }
