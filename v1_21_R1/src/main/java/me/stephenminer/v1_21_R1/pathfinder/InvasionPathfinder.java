@@ -10,14 +10,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.*;
 
 public class InvasionPathfinder {
-    private final Level world;
-    private final int maxFallDist;
-    private final Set<Block> blacklist;
+    protected final Level world;
+    protected final int maxFallDist;
+    protected final Set<Block> blacklist;
 
     public InvasionPathfinder(Level world, int maxFallDist, Set<Block> blacklist){
         this.world = world;
         this.maxFallDist = maxFallDist;
         this.blacklist = blacklist;
+
+
     }
 
     public List<Node> findPath(BlockPos start, BlockPos goal){
@@ -25,6 +27,7 @@ public class InvasionPathfinder {
         NodeMap visited = new NodeMap(2048);
         Node startNode = new Node(null, start, 0, 0);
         open.push(startNode);
+
         int nodes = 0;
         while (!open.empty()){
             Node current = open.pop();
@@ -43,60 +46,14 @@ public class InvasionPathfinder {
             if (best != null && !current.pos.equals(best.pos)) continue;
             BlockPos[] neighbors = neighbors(current.pos);
             for (BlockPos pos : neighbors){
-                /*
-                double dy = pos.getY() - current.y;
-                BlockPos aboveHead = current.pos.above();
-
-                //  boolean digAbove = dy > 0 && !walkable(world.getBlockState(aboveHead));
-                //  boolean digFront = dy < 0 && !walkable(world.getBlockState(current.pos.));
-                BlockPos digExtra = digExtraCeiling((int) dy, current.pos, pos);
-                BlockPos above = pos.above();
-                BlockPos below = pos.below();
-                BlockState state = world.getBlockState(pos);
-                BlockState stateAbove = world.getBlockState(above);
-                BlockState stateBelow = world.getBlockState(below);
-                Node node = null;
-                double digCost = 0;
-                if (!world.isInWorldBounds(pos)) continue;
-                if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null){
-                        node.digTargets = new BlockPos[]{digExtra};
-                        digCost += determineDigCost(node.digTargets);
-                    }
-                }else if (walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig(state)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, pos};
-                    else
-                        node.digTargets = new BlockPos[]{pos};
-                    digCost += determineDigCost(node.digTargets);
-                }else if (!walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig(stateAbove)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, above};
-                    else node.digTargets = new BlockPos[]{above};
-                    digCost += determineDigCost(node.digTargets);
-                }else if (!walkable(stateAbove) && !walkable(state) && isSolid(below, stateBelow)){
-                    if (!canDig( stateAbove) || !canDig(state)) continue;
-                    node = buildNode(current, pos, goal);
-                    if (digExtra != null)
-                        node.digTargets = new BlockPos[]{digExtra, above, pos};
-                    else node.digTargets = new BlockPos[]{above, pos};
-                    digCost += determineDigCost(node.digTargets);
-                }
-
-                 */
-
                 Node node = evalPosition(pos, goal, current);
                 if (node == null) continue;
                 long key = pos.asLong();
                 Node onFile = visited.get(key);
                // System.out.println(node.toString());
                // if (critNode)
-                    //System.out.println(node.toString());
+                    //System.out.println(node.
+                //toString());
                 if (onFile == null || node.cost < onFile.cost) {
                     visited.put(key, node);
                     open.push(node);
@@ -138,7 +95,7 @@ public class InvasionPathfinder {
         return node;
     }
 
-    private Node evalPosition(BlockPos pos, BlockPos goal, Node current){
+    protected Node evalPosition(BlockPos pos, BlockPos goal, Node current){
         int dy = pos.getY() - current.y;
         BlockPos aboveHead = current.pos.above();
 
@@ -196,14 +153,14 @@ public class InvasionPathfinder {
     }
 
 
-    private Node buildNode(Node current, BlockPos pos, BlockPos goal){
+    protected Node buildNode(Node current, BlockPos pos, BlockPos goal){
         double cost = 1.0;
         double heuristic = heuristic(pos, goal);
        // Node node = discovered.get(pos.asLong());
         return new Node(current, pos, cost, heuristic);
     }
 
-    private float determineDigCost(BlockPos... positions){
+    protected float determineDigCost(BlockPos... positions){
         float sum = 0;
         for (BlockPos pos : positions){
             if (world.getBlockState(pos).destroySpeed < 0) return -1;
@@ -268,11 +225,11 @@ public class InvasionPathfinder {
         return path;
     }
 
-    private double heuristic(BlockPos pos1, BlockPos pos2){
+    protected double heuristic(BlockPos pos1, BlockPos pos2){
         return Math.abs(pos1.getX() - pos2.getX()) + Math.abs(pos1.getY() - pos2.getY()) + Math.abs(pos1.getZ() - pos2.getZ());
     }
 
-    private double heuristic(int x, int y, int z, BlockPos target){
+    protected double heuristic(int x, int y, int z, BlockPos target){
         return Math.abs(x - target.getX()) + Math.abs(y - target.getY()) + Math.abs(z - target.getZ());
     }
 
@@ -295,4 +252,6 @@ public class InvasionPathfinder {
     public boolean canBridge(BlockState state){
         return state.isAir() || state.canBeReplaced() || liquid(state);
     }
+
+
 }
