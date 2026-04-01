@@ -90,14 +90,6 @@ public class NexusListener implements Listener {
         container.set(Nexus.POS_KEY, PersistentDataType.BYTE_ARRAY, outStream.toByteArray());
     }
 
-    @EventHandler
-    public void chatTest(AsyncPlayerChatEvent event){
-        for (Nexus nexus : nexusMap.values()){
-            Bukkit.getScheduler().runTaskLater(plugin, ()->{
-                            nexus.testSpawn(event.getPlayer().getLocation());
-                        }, 1);
-        }
-    }
 
     private ByteArrayOutputStream updateNexusChunk(Chunk chunk){
         Collection<Nexus> nexuses = Invasion.nexusMap.values();
