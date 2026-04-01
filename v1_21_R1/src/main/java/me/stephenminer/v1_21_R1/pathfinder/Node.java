@@ -1,6 +1,7 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 
 public class Node {
@@ -10,6 +11,7 @@ public class Node {
     protected double cost, heuristic;
     protected boolean closed;
     protected BlockPos[] digTargets, buildTargets;
+    protected BlockState[] buildMats;
 
     public Node (Node parent, BlockPos pos, double cost, double heuristic){
         this.parent = parent;
