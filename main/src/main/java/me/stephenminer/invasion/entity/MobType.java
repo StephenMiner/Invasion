@@ -15,7 +15,8 @@ import java.util.UUID;
 
 public enum MobType {
 
-    IZOMBIE("IZombie");
+    IZOMBIE("IZombie"),
+    BUILDER_STRAY("BuilderStray");
 
 
     private MobType(String id){
@@ -83,4 +84,6 @@ public enum MobType {
         }
         return mob;
     }
+
+
 }
