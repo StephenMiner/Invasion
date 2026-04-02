@@ -3,6 +3,8 @@ package me.stephenminer.v1_21_R1.pathfinder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Objects;
+
 
 public class Node {
     protected Node parent;
@@ -50,5 +52,10 @@ public class Node {
     @Override
     public String toString(){
         return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic;
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(this.x, this.y, this.z, this.heuristic, this.cost);
     }
 }
