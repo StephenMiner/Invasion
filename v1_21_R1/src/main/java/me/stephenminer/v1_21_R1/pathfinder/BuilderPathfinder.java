@@ -22,6 +22,14 @@ public class BuilderPathfinder extends InvasionPathfinder{
     }
 
     @Override
+    public List<Node> findPath(BlockPos start, BlockPos goal){
+        List<Node> path = super.findPath(start, goal);
+        System.out.println(path);
+        //addPlatforms(path);
+        return path;
+    }
+
+    @Override
     public Node evalPosition(BlockPos pos, BlockPos goal, Node current){
         if (!pos.equals(current.pos.above()))
             return super.evalPosition(pos, goal, current);
@@ -52,9 +60,18 @@ public class BuilderPathfinder extends InvasionPathfinder{
             tower = buildNode(tower, ladder, goal);
             tower.buildTargets = new BlockPos[]{pillar, ladder};
             tower.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
-            tower.cost += 1;
+            tower.cost += 3;
         }
         return tower;
+    }
+
+    private boolean checkParentOverlap(Node current, BlockPos toAdd){
+        if (current.parent == null || current.parent.buildTargets == null) return false;
+        for (int i = 0; i < current.buildTargets.length; i++){
+            BlockPos pos = current.buildTargets[i];
+            if (toAdd.equals(pos)) return true;
+        }
+        return false;
     }
 
 
@@ -63,20 +80,19 @@ public class BuilderPathfinder extends InvasionPathfinder{
      * @param path
      * @return
      */
-    private Set<Node> determinePlatforms(List<Node> path){
-        if (path.isEmpty()) return Set.of();
-        Set<Node> platformNodes = new HashSet<>();
+    private void addPlatforms(List<Node> path){
+        if (path.isEmpty()) return;
         int scaffoldHeight = 0;
         Node prev = path.get(0);
         for (int i = 1; i < path.size(); i++){
             Node node = path.get(i);
             if (nodeDyOnly(node, prev) && scaffoldNode(node) && scaffoldNode(prev)) {
                 if (scaffoldHeight % 4 == 0)
-                    platformNodes.add(node);
+                    injectPlatforms(node);
                 scaffoldHeight++;
             }else scaffoldHeight = 0;
         }
-        return platformNodes;
+
     }
 
     private BlockPos[] platformPositions(BlockPos pos){

@@ -104,12 +104,13 @@ public class InvasionGoal extends Goal {
                     mob.swing(InteractionHand.MAIN_HAND);
                 BlockPos pos = current.buildTargets[buildIndex];
                 BlockState state = current.buildMats[buildIndex];
-                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && pathfinder.walkable(state)) {
+                BlockState worldState = level.getBlockState(pos);
+                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && ((pathfinder.walkable(state) && !pathfinder.walkable(worldState)) || (!pathfinder.walkable(state) && pathfinder.walkable(worldState)))) {
                     // Someone placed a block where a walkable block was going to be placed
                     recalcPath();
                     return;
                 }
-                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && !pathfinder.walkable(state)){
+                if (pathfinder.isSolid(pos, level.getBlockState(pos)) && !pathfinder.walkable(state) && !pathfinder.walkable(worldState)){
                     // Someone placed a solid block where a solid block was going to be placed, advance building one step
                     buildIndex++;
                     buildProg = 0;
