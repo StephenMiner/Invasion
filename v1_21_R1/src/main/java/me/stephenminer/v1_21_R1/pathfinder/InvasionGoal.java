@@ -118,10 +118,6 @@ public class InvasionGoal extends Goal {
                 }
                 if (buildProg < maxBuildTime) return;
                 level.setBlockAndUpdate(current.buildTargets[buildIndex], current.buildMats[buildIndex]);
-                if (buildIndex == 1) {
-                    System.out.println(current.buildMats[buildIndex].getValue(LadderBlock.FACING));
-                    System.out.println("world " + level.getBlockState(current.pos).getValue(LadderBlock.FACING));
-                }
                 buildIndex++;
 
                 buildProg = 0;
