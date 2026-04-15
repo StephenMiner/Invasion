@@ -51,7 +51,7 @@ public class Node {
 
     @Override
     public String toString(){
-        return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic;
+        return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic + ", build-targets: " + buildTargets;
     }
 
     @Override
