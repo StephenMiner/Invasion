@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -24,8 +23,8 @@ public class BuilderPathfinder extends InvasionPathfinder{
     @Override
     public List<Node> findPath(BlockPos start, BlockPos goal){
         List<Node> path = super.findPath(start, goal);
-        System.out.println(path);
-        //addPlatforms(path);
+      //  System.out.println(path);
+        addPlatforms(path);
         return path;
     }
 
@@ -86,11 +85,15 @@ public class BuilderPathfinder extends InvasionPathfinder{
         Node prev = path.get(0);
         for (int i = 1; i < path.size(); i++){
             Node node = path.get(i);
+            System.out.println(nodeDyOnly(node, prev));
             if (nodeDyOnly(node, prev) && scaffoldNode(node) && scaffoldNode(prev)) {
-                if (scaffoldHeight % 4 == 0)
+                if (scaffoldHeight != 0 && scaffoldHeight % 4 == 0) {
+                    System.out.println("INJECTING");
                     injectPlatforms(node);
+                }else System.out.println("HEIGHT: " + scaffoldHeight);
                 scaffoldHeight++;
             }else scaffoldHeight = 0;
+            prev = node;
         }
 
     }
@@ -113,7 +116,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
 
     private void injectPlatforms(Node node){
         BlockPos[] positions = platformPositions(node.pos);
-        List<Node> additions = new ArrayList<>();
+        List<BlockPos> additions = new ArrayList<>();
         for (BlockPos pos : positions){
             // Skip block pos if it is already in build target array
             boolean skip = false;
@@ -129,8 +132,9 @@ public class BuilderPathfinder extends InvasionPathfinder{
             // Skip Block pos if the pos already contains a ladder or a solid block
             BlockState state = world.getBlockState(pos);
             if (isSolid(pos, state) && !isLadder(state)) continue;
-            additions.add(node);
+            additions.add(pos);
         }
+        System.out.println("Generating " + additions.size() + " Platforms");
         int additionSize = additions.size();
         int sizes = additionSize + (node.buildTargets == null ? 0 : node.buildTargets.length);
         BlockPos[] targets = new BlockPos[sizes];
@@ -140,7 +144,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
         // add additional build targets first, we probably want the platform constructed before anything else...
         int i;
         for (i = 0; i < additions.size(); i++){
-            targets[i] = additions.get(i).pos;
+            targets[i] = additions.get(i);
             states[i] = oakState;
         }
 
@@ -155,11 +159,11 @@ public class BuilderPathfinder extends InvasionPathfinder{
     }
 
     private boolean nodeDyOnly(Node node1, Node node2){
-        return node2.y - node1.y > 0 && node2.x == node1.x && node2.z == node1.z;
+        return node2.y != node1.y && node2.x == node1.x && node2.z == node1.z;
     }
 
     private boolean scaffoldNode(Node node){
-        if (node.digTargets == null || node.buildMats== null) return false;
+        if (node.buildMats== null) return false;
         for (int i = 0; i < node.buildMats.length; i++){
             BlockState block = node.buildMats[i];
             if (block.getBlock() == Blocks.LADDER) return true;
