@@ -154,9 +154,10 @@ public class InvasionPathfinder {
 
 
     protected Node buildNode(Node current, BlockPos pos, BlockPos goal){
-        double cost = 1.0;
-        double heuristic = heuristic(pos, goal);
+        int cost = 1;
+        int heuristic = heuristic(pos, goal);
        // Node node = discovered.get(pos.asLong());
+        Node child = new Node(current, pos, cost ,heuristic);
         return new Node(current, pos, cost, heuristic);
     }
 
@@ -225,11 +226,11 @@ public class InvasionPathfinder {
         return path;
     }
 
-    protected double heuristic(BlockPos pos1, BlockPos pos2){
+    protected int heuristic(BlockPos pos1, BlockPos pos2){
         return Math.abs(pos1.getX() - pos2.getX()) + Math.abs(pos1.getY() - pos2.getY()) + Math.abs(pos1.getZ() - pos2.getZ());
     }
 
-    protected double heuristic(int x, int y, int z, BlockPos target){
+    protected int heuristic(int x, int y, int z, BlockPos target){
         return Math.abs(x - target.getX()) + Math.abs(y - target.getY()) + Math.abs(z - target.getZ());
     }
 

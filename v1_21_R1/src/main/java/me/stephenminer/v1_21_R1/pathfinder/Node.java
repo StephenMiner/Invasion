@@ -10,12 +10,13 @@ public class Node {
     protected Node parent;
     protected int x, y, z;
     protected BlockPos pos;
-    protected double cost, heuristic;
+    protected int cost, heuristic;
     protected boolean closed;
     protected BlockPos[] digTargets, buildTargets;
     protected BlockState[] buildMats;
+    protected int scanTime = 0;
 
-    public Node (Node parent, BlockPos pos, double cost, double heuristic){
+    public Node (Node parent, BlockPos pos, int cost, int heuristic){
         this.parent = parent;
         this.pos = pos;
         this.x = pos.getX();
@@ -26,7 +27,7 @@ public class Node {
         this.closed = false;
     }
 
-    public double totalCost(){ return cost + heuristic; }
+    public int totalCost(){ return cost + heuristic; }
 
     public double distSqr(int x, int y, int z){
         return Math.pow(this.x - x, 2) + Math.pow(this.y - y, 2) + Math.pow(this.z - z, 2);
@@ -35,8 +36,8 @@ public class Node {
     public int x(){ return x; }
     public int y(){ return y; }
     public int z(){ return z; }
-    public double cost(){ return cost; }
-    public double heuristic(){ return heuristic; }
+    public int cost(){ return cost; }
+    public int heuristic(){ return heuristic; }
     public boolean closed(){ return closed; }
     public BlockPos pos(){ return pos; }
 

@@ -99,11 +99,15 @@ public class InvasionGoal extends Goal {
                 breakProg = 0;
             }
             if (!digging && buildIndex < numBuild){
+                BlockPos pos = current.buildTargets[buildIndex];
+                BlockState state = current.buildMats[buildIndex];
+                if (heightDif(mob.getY(), pos.getY()) > 5){
+                    //mob.mo
+                }
                 mob.getNavigation().stop();
                 if (buildProg % 10 == 0)
                     mob.swing(InteractionHand.MAIN_HAND);
-                BlockPos pos = current.buildTargets[buildIndex];
-                BlockState state = current.buildMats[buildIndex];
+
                 BlockState worldState = level.getBlockState(pos);
                 if (pathfinder.isSolid(pos, level.getBlockState(pos)) && ((pathfinder.walkable(state) && !pathfinder.walkable(worldState)) || (!pathfinder.walkable(state) && pathfinder.walkable(worldState)))) {
                     // Someone placed a block where a walkable block was going to be placed
@@ -194,6 +198,14 @@ public class InvasionGoal extends Goal {
         digging = false;
         moveFlag = false;
     }
+
+    private double heightDif(BlockPos target, BlockPos origin){
+        return heightDif(target.getY(), origin.getY());
+    }
+    private double heightDif(double y1, double y2){
+        return y1 - y2;
+    }
+
 
     private int breakTicks(BlockPos pos){
         return (int) (2 * mob.level().getBlockState(pos).destroySpeed);

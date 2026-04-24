@@ -7,6 +7,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import org.bukkit.Location;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class Nexus {
@@ -17,6 +18,9 @@ public class Nexus {
     private final UUID uuid;
     private Catalyst catalyst;
     private int health, maxHealth;
+
+    public Map<Integer, Integer> placeholder;
+
 
     public static final int SCAFFOLD_TIME = 250 * 20;
 
