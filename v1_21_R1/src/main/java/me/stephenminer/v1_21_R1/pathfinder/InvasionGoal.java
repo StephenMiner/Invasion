@@ -75,6 +75,9 @@ public class InvasionGoal extends Goal {
         if (stepIndex >= path.size())
             return;
         Node current = path.get(stepIndex);
+        if (pathfinder.looker.contains(current)){
+            System.out.println("==========wow========");
+        }
         Level level = mob.level();
         int numDig = current.digTargets != null ? current.digTargets.length : 0;
         int numBuild = current.buildTargets != null ? current.buildTargets.length : 0;
@@ -128,13 +131,9 @@ public class InvasionGoal extends Goal {
             }
         }else{
             Vec3 nextPos = getEntityPosAtNode(mob, stepIndex);
-            if (isOnLadder()){
-                Vec3 vec = nextPos.subtract(mob.position());
-               // moveControl.setWantedPosition(nextPos.x, nextPos.y, nextPos.z,1.0f);
-            }//else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
-
             if (isOnLadder()) {// && !isOnLadder(current.pos)
                 if (!blockPosValid(current.pos)){
+                    System.out.println("found bad position at node : " + current);
                     recalcPath();
                     return;
                 }

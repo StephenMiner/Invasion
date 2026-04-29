@@ -10,11 +10,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.*;
 
 public class InvasionPathfinder {
+    public Set<Node> looker;
     protected final Level world;
     protected final int maxFallDist;
     protected final Set<Block> blacklist;
 
     public InvasionPathfinder(Level world, int maxFallDist, Set<Block> blacklist){
+        this.looker = new HashSet<>();
         this.world = world;
         this.maxFallDist = maxFallDist;
         this.blacklist = blacklist;

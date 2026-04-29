@@ -16,7 +16,6 @@ public class BuilderPathfinder extends InvasionPathfinder{
 
     public BuilderPathfinder(Level world, int fallDist, Set<Block> blacklist){
         super(world, fallDist, blacklist);
-
     }
 
     @Override
@@ -158,14 +157,11 @@ public class BuilderPathfinder extends InvasionPathfinder{
         node.buildTargets = targets;
         node.buildMats = states;
 
-
+        addPlatformMoveNode(node, path , index, goal);
         compressBuilding(path, index, lastIndex);
-        //addPlatformMoveNode(node, path , index, goal);
+
     }
 
-    /*
-        TODO: REVERSE --- APPEND TO lastIndex Node not current Node!!!!!!!
-     */
     private void compressBuilding(List<Node> path, int index, int lastIndex){
         List<BlockPos> posCopy = new ArrayList<>();
         List<BlockState> stateCopy = new ArrayList<>();
@@ -208,19 +204,33 @@ public class BuilderPathfinder extends InvasionPathfinder{
             System.out.println("Failed to find a pillar position");
             return;
         }
+        BlockPos position = parent.pos();
+        BlockPos poleFoot = position.above();
+        BlockPos poleHead = position.above().above();
+        BlockState poleFtState = world.getBlockState(poleFoot);
+        BlockState poleHdState = world.getBlockState(poleHead);
+
+        if (!walkable(poleFtState) || !walkable(poleHdState)) {
+            System.out.println("Injecting no nodes for movement onto platforms: Obstructed pole");
+            return;
+        }
+        Node poleNode = buildNode(parent, poleFoot, goal);
         Set<BlockPos> validTargets = validTargets(parent.pos, pillar);
         for (int i = 0; i < positions.length; i++){
             BlockPos pos = positions[i];
             if (!validTargets.contains(pos)) continue;
             if (pos.getX() == pillar.getX() && pos.getZ() == pillar.getZ()) continue;
+            BlockPos moveTarget = pos.above();
             BlockState state = states[i];
-            BlockState footState = world.getBlockState(pos.above());
+            BlockState footState = world.getBlockState(moveTarget);
             BlockState headState = world.getBlockState(pos.above().above());
             if (!isSolid(pos, state) || !walkable(footState) || !walkable(headState)) continue;
-            valid.add(pos);
+            valid.add(moveTarget);
         }
+
         Node node;
         if (valid.isEmpty()) {
+            System.out.println("Generating dig node for movement injection");
             node = generateDigNode(parent, goal, validTargets);
             if (node == null){
                 System.out.println("Something went wrong here...");
@@ -228,21 +238,27 @@ public class BuilderPathfinder extends InvasionPathfinder{
             }
         }else{
             BlockPos selection = valid.get(ThreadLocalRandom.current().nextInt(valid.size()));
-            node = buildNode(parent, selection, goal);
+            node = buildNode(poleNode, selection, goal);
         }
         // If the current node is at the end of the list,
         // just inject new node at end of the path
-        if (index + 1 >= path.size())
+        if (index + 1 >= path.size()) {
+            path.add(poleNode);
             path.add(node);
-        else{
+        }else{
             // If not at the end of the list, set the current i + 1 node's parent to injected node
             // Inject node into the i + 1 position
             Node child = path.get(index + 1);
             child.parent = node; // Cost is now corrupted...
-            path.add(index + 1, node);
+            path.add(index + 1, poleNode);
+            path.add(index + 2, node);
+
             System.out.println("Generating MOVE NODE");
+            System.out.println("===" + node);
+            looker.add(node);
         }
     }
+
 
     private Set<BlockPos> validTargets(BlockPos center, BlockPos pillar){
         Set<BlockPos> targets = new HashSet<>();
