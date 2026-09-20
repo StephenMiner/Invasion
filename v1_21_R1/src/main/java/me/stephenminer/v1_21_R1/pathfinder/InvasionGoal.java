@@ -1,7 +1,5 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
-import me.stephenminer.invasion.Invasion;
-import me.stephenminer.invasion.entity.InvasionMob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -9,7 +7,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -88,6 +85,15 @@ public class InvasionGoal extends Goal {
         }
 
         if (!moveFlag){
+            // Hold position on the ladder
+            if (isOnLadder(mob.blockPosition())){
+                mob.addDeltaMovement(new Vec3(0,0.2,0));
+            }
+            if (mob.distanceToSqr(current.pos.getCenter()) > 12) {
+                // kind of ew, but recalc path
+                recalcPath();
+                return;
+            }
             if (digIndex < numDig){
                 mob.getNavigation().stop();
                 digging = true;
@@ -135,8 +141,7 @@ public class InvasionGoal extends Goal {
                 if (!blockPosValid(current.pos)){
                     System.out.println("found bad position at node : " + current);
                     recalcPath();
-                    return;
-                }
+                    return;}
                 double dx = current.x + 0.5 - mob.getX();
                 double dy = current.y + 0.5 - mob.getY();
                 double dz = current.z + 0.5 - mob.getZ();

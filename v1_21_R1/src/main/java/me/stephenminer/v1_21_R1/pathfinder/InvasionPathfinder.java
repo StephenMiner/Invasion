@@ -33,13 +33,6 @@ public class InvasionPathfinder {
         int nodes = 0;
         while (!open.empty()){
             Node current = open.pop();
-            boolean critNode = false;
-            //System.out.println(current.pos);
-            //if (current.closed) continue;
-          //  current.closed = true;
-            if (current.pos.getY() == 71 && current.pos.getX() == 132 && current.pos.getZ() == -27){
-                critNode = true;
-            }
             if (current.pos().equals(goal) || current.pos.equals(goal.above())) {
                 System.out.println(goal);
                 return reconstructPath(current);
