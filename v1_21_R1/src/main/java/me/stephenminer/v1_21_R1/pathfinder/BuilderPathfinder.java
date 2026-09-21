@@ -28,9 +28,10 @@ public class BuilderPathfinder extends InvasionPathfinder{
 
     @Override
     public Node evalPosition(BlockPos pos, BlockPos goal, Node current){
-        if (!pos.equals(current.pos.above()))
-            return super.evalPosition(pos, goal, current);
-
+        if (!pos.equals(current.pos.above())) {
+            Node regular = super.evalPosition(pos, goal, current);
+            return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
+        }
         Direction dir = null;
         if (current.parent == null) dir = Direction.Plane.HORIZONTAL.getRandomDirection(world.getRandom());
         double dist = -1;
@@ -59,7 +60,76 @@ public class BuilderPathfinder extends InvasionPathfinder{
             tower.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
             tower.cost += 3;
         }
+        tower.cost += current.cost; // i can't believe I wasn't doing this
         return tower;
+    }
+
+
+    /**
+     * PRECONDITION
+     * The Node generated from super.evaluatePos MUST be null
+     * This function assumes that horizontal movement to the proposed position is impossible
+     * This happens if the positon is unreachable due to bedrock like conditions or a empty foot level
+     *
+     *
+     * @param pos
+     * @param goal
+     * @param current
+     * @return
+     */
+
+    private Node evalBridgeRoute(BlockPos pos, BlockPos goal, Node current){
+        int dy = pos.getY() - current.y;
+        BlockPos digExtra = digExtraCeiling(dy, current.pos, pos);
+        BlockPos above = pos.above();
+        BlockPos below = pos.below();
+
+        BlockState state = world.getBlockState(pos);
+        BlockState stateAbove = world.getBlockState(above);
+        BlockState stateBelow = world.getBlockState(below);
+        Node node = null;
+        double digCost = 0;
+        node = buildNode(current, pos, goal);
+        // This is a case that we assume to already have been covered. Not a valid move target
+        if (isSolid(below, stateBelow) || !canBridge(stateBelow))
+            return null;
+        double buildCost = 2;
+        BlockPos[] buildTargets = new BlockPos[]{below};
+        BlockState[] buildStates =  new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState()};
+
+        node = buildNode(current, pos, goal);
+        if (walkable(stateAbove) && walkable(state)){
+            if (digExtra != null){
+                node.digTargets = new BlockPos[]{digExtra};
+                digCost += determineDigCost(node.digTargets);
+            }
+        }else if (walkable(stateAbove) && !walkable(state)){
+            if (!canDig(stateAbove)) return null;
+            if (digExtra != null){
+                node.digTargets = new BlockPos[]{digExtra, pos};
+            }else node.digTargets = new BlockPos[]{pos};
+            digCost += determineDigCost(node.digTargets);
+        }else if (!walkable(stateAbove) && walkable(state)){
+            if (!canDig(stateAbove)) return null;
+            if (digExtra != null){
+                node.digTargets = new BlockPos[]{digExtra, above};
+            }else node.digTargets = new BlockPos[]{above};
+            digCost += determineDigCost(node.digTargets);
+        }else if (!walkable(stateAbove) && !walkable(state)){
+            if (!canDig(stateAbove) || !canDig(state)) return null;
+            if (digExtra != null)
+                node.digTargets = new BlockPos[]{digExtra, above, pos};
+            else node.digTargets = new BlockPos[]{above, pos};
+            digCost += determineDigCost(node.digTargets);
+        }else node = null;
+
+        if (digCost < 0) return null;
+        if (node != null) {
+            node.cost += (int) (current.cost + digCost + 2); // the 2 is for bridge tax
+            node.buildMats = buildStates;
+            node.buildTargets = buildTargets;
+        }
+        return node;
     }
 
     private boolean checkParentOverlap(Node current, BlockPos toAdd){
@@ -191,8 +261,10 @@ public class BuilderPathfinder extends InvasionPathfinder{
      * @param parent
      */
     /*
-        TODO: entity chooses the one case I do not want it to choose consistently. Breaking the pillar block
-            Maybe the movement nodes aren't injected properly?
+        ~~TODO: entity chooses the one case I do not want it to choose consistently. Breaking the pillar block
+            Maybe the movement nodes aren't injected properly?~~
+
+            Looks fine now?
      */
     private void addPlatformMoveNode(Node parent, List<Node> path, int index, BlockPos goal){
         if (parent.buildTargets == null) return;

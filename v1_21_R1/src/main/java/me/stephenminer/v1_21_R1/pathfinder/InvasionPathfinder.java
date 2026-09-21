@@ -175,7 +175,7 @@ public class InvasionPathfinder {
      * @return A BlockPosition containing the position of the block we need to dig to allow us to
      *         to reach the future position. Checks cases for stairs only. Returns null if no digging needed
      */
-    private BlockPos digExtraCeiling(int dy, BlockPos current, BlockPos future){
+    protected BlockPos digExtraCeiling(int dy, BlockPos current, BlockPos future){
         BlockPos pos = null;
         if (dy >= 1 && !walkable(world.getBlockState(current.above().above()))){
             pos = current.above().above();
