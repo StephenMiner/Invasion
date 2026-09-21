@@ -29,6 +29,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
     @Override
     public Node evalPosition(BlockPos pos, BlockPos goal, Node current){
         if (!pos.equals(current.pos.above())) {
+            //TODO: Insert straight down check, but ensure some kind of drop. Then run drop down ladder evaluator.
             Node regular = super.evalPosition(pos, goal, current);
             return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
         }
@@ -60,7 +61,8 @@ public class BuilderPathfinder extends InvasionPathfinder{
             tower.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
             tower.cost += 3;
         }
-        tower.cost += current.cost; // i can't believe I wasn't doing this
+
+        tower.cost += current.cost;
         return tower;
     }
 
@@ -130,6 +132,11 @@ public class BuilderPathfinder extends InvasionPathfinder{
             node.buildTargets = buildTargets;
         }
         return node;
+    }
+
+    // Assumed to be a down-x-direction. Straight downs shouldn't pass the evaluator
+    private Node evalDropLadder(BlockPos pos, BlockPos goal, Node current){
+        int y = pos.getY();
     }
 
     private boolean checkParentOverlap(Node current, BlockPos toAdd){
