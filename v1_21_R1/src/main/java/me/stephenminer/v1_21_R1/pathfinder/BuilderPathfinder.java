@@ -45,7 +45,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
         int segmentsToBuild = 4;
         if (current.buildTargets != null && scaffoldNode(current)){
             segmentsToBuild = 2;
-        }
+        } //test
 
         Node tower = current;
         //complicated looking code final boss
