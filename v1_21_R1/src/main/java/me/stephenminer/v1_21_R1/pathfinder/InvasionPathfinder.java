@@ -157,6 +157,7 @@ public class InvasionPathfinder {
     }
 
     protected float determineDigCost(BlockPos... positions){
+        if (positions == null) return 0;
         float sum = 0;
         for (BlockPos pos : positions){
             if (world.getBlockState(pos).destroySpeed < 0) return -1;

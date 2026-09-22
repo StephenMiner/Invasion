@@ -1,6 +1,7 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Objects;
@@ -52,7 +53,16 @@ public class Node {
 
     @Override
     public String toString(){
-        return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic + ", build-targets: " + buildTargets;
+        return "X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ() + ", cost=" + cost + ", heuristic=" + heuristic + ", build-targets: " + buildTargets + ", build-mats: " + flattenArray(buildMats);
+    }
+
+    private String flattenArray(BlockState[] states){
+        if (states == null) return "";
+        StringBuilder builder = new StringBuilder();
+        for (BlockState state : states){
+            builder.append(state.getBlock().getName()).append(',');
+        }
+        return builder.toString();
     }
 
     @Override

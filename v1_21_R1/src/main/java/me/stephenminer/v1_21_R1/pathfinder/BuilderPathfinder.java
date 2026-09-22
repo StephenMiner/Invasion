@@ -30,6 +30,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
     public Node evalPosition(BlockPos pos, BlockPos goal, Node current){
         if (!pos.equals(current.pos.above())) {
             //TODO: Insert straight down check, but ensure some kind of drop. Then run drop down ladder evaluator.
+            Node dropNode = evalDropLadder(pos, goal, current); // null if not straight down, or impossible to generate
             if (pos.equals(current.pos.below())) return null; // Unsupported movement
             Node regular = super.evalPosition(pos, goal, current);
             return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
@@ -53,18 +54,54 @@ public class BuilderPathfinder extends InvasionPathfinder{
         //complicated looking code final boss
         // -1 is so that the place at the entities foot position will also have a pillar + ladder if they are just starting the scaffold. Otherwise we don't do this
         for (int i = segmentsToBuild != 4 ? 0 : -1; i < segmentsToBuild; i++){
-            BlockPos pillar = pos.relative(dir).relative(Direction.UP, i);
-            BlockState ladderState = Blocks.LADDER.defaultBlockState();
-            ladderState = ladderState.setValue(LadderBlock.FACING, dir.getOpposite());
-            BlockPos ladder = pos.relative(Direction.UP, i);
-            tower = buildNode(tower, ladder, goal);
-            tower.buildTargets = new BlockPos[]{pillar, ladder};
-            tower.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
-            tower.cost += 3;
+            tower = evalLadderNode(pos, goal, tower, dir, i);
+            if (tower == null) return null;
         }
-
+        // tower can never equal current by the time we reach this, so no need to worry 'bout cost doubling.
         tower.cost += current.cost;
         return tower;
+    }
+
+    private Node evalLadderNode(BlockPos pos, BlockPos goal, Node current, Direction dir, int upOffset){
+        // No dig extra because we are only in a pure upwards direction
+        BlockPos above = pos.above();
+
+        BlockState state = world.getBlockState(pos);
+        BlockState stateAbove = world.getBlockState(above);
+
+        BlockPos pillar = pos.relative(dir).relative(Direction.UP, upOffset);
+        BlockState pillarState = world.getBlockState(pillar);
+
+        Node node = buildNode(current, pos, goal);
+        BlockState ladderState = Blocks.LADDER.defaultBlockState();
+        ladderState = ladderState.setValue(LadderBlock.FACING, dir.getOpposite());
+        BlockPos[] digTargets = null;
+        float digCost = 0;
+        if (walkable(stateAbove) && walkable(state)){
+            // free space, may delete branch
+        }else if (!walkable(stateAbove) && walkable(state)){
+            if (!canDig(stateAbove)) return null;
+            digTargets = new BlockPos[]{above};
+        }else if (walkable(stateAbove) && !walkable(state)){
+            if (!canDig(state)) return null;
+            digTargets = new BlockPos[]{pos};
+        }else if (!walkable(state) && !walkable(stateAbove)){
+            if (!canDig(state) || !canDig(stateAbove)) return null;
+            digTargets = new BlockPos[]{pos, above};
+        }
+        if (!canBridge(pillarState)) {
+            node.buildTargets = new BlockPos[]{pos};
+            node.buildMats = new BlockState[]{ladderState};
+        }else{
+            node.buildTargets = new BlockPos[]{pillar, pos};
+            node.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
+        }
+        digCost += determineDigCost(digTargets);
+        if (digCost < 0) return null;
+        node.digTargets = digTargets;
+        // defer addition of final cost to avoid over-penalizing tower creation.
+        node.cost += (int) digCost;
+        return node;
     }
 
 
@@ -150,6 +187,10 @@ public class BuilderPathfinder extends InvasionPathfinder{
         int z = pos.getZ();
         Node dropDown = current;
         Direction returnDir = detDropLadderDir(current.pos, pos);
+        if (returnDir == null){
+            System.out.println("Failed to calculate return dir:" + current.pos + "," + pos);
+            return null;
+        }
         for (;y > world.getMinBuildHeight(); y--){
             BlockPos ladder = new BlockPos(x, y, z);
             if (!world.getBlockState(ladder).isAir()) break;
@@ -170,6 +211,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
             dropDown.buildMats = buildStates;
             dropDown.cost += 1;// kind of irrelevant to be honest
         }
+
         /*
          note to self, this is like a wormhole of generating cost. We only apply the historial cost to the final node which gets added to stack.
          This also lessens the penalty for this as well.
@@ -217,6 +259,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
             Node node = path.get(i);
             System.out.println(nodeDyOnly(node, prev));
             if (nodeDyOnly(node, prev) && scaffoldNode(node) && scaffoldNode(prev)) {
+                System.out.println("DY VAL: " + (prev.y - node.y));
                 if (scaffoldHeight != 0 && scaffoldHeight % 4 == 0) {
                     System.out.println("INJECTING");
                     injectPlatforms(node, path, i, cached, goal);
@@ -226,7 +269,6 @@ public class BuilderPathfinder extends InvasionPathfinder{
             }else scaffoldHeight = 0;
             prev = node;
         }
-
     }
 
     private BlockPos[] platformPositions(BlockPos pos){
@@ -462,6 +504,13 @@ public class BuilderPathfinder extends InvasionPathfinder{
         return null;
     }
 
+    private boolean posDyOnly(Node node1, Node node2){
+        return node2.y - node1.y > 0 && node2.x == node1.x && node2.z == node1.z;
+    }
+
+    private boolean negDyOnly(Node node1, Node node2){
+        return node2.y - node1.y < 0 && node2.x == node1.x && node2.z == node1.z;
+    }
     private boolean nodeDyOnly(Node node1, Node node2){
         return node2.y != node1.y && node2.x == node1.x && node2.z == node1.z;
     }
