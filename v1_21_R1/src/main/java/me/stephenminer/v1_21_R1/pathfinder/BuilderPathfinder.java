@@ -30,6 +30,7 @@ public class BuilderPathfinder extends InvasionPathfinder{
     public Node evalPosition(BlockPos pos, BlockPos goal, Node current){
         if (!pos.equals(current.pos.above())) {
             //TODO: Insert straight down check, but ensure some kind of drop. Then run drop down ladder evaluator.
+            if (pos.equals(current.pos.below())) return null; // Unsupported movement
             Node regular = super.evalPosition(pos, goal, current);
             return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
         }
@@ -134,9 +135,62 @@ public class BuilderPathfinder extends InvasionPathfinder{
         return node;
     }
 
-    // Assumed to be a down-x-direction. Straight downs shouldn't pass the evaluator
+    /**
+     *   Assumed to be a down-xz-direction. Straight downs shouldn't pass the evaluator
+     *   that is, where H is where we are (current) and P is the proposed location
+     *   .H.
+     *   ..P
+     *   ...
+     *   We break if the current pos is not air
+      */
+
     private Node evalDropLadder(BlockPos pos, BlockPos goal, Node current){
         int y = pos.getY();
+        int x = pos.getX();
+        int z = pos.getZ();
+        Node dropDown = current;
+        Direction returnDir = detDropLadderDir(current.pos, pos);
+        for (;y > world.getMinBuildHeight(); y--){
+            BlockPos ladder = new BlockPos(x, y, z);
+            if (!world.getBlockState(ladder).isAir()) break;
+            dropDown = buildNode(dropDown,  pos, goal);
+            BlockPos pillar = ladder.relative(returnDir);
+            BlockPos[] buildTargets;
+            BlockState[] buildStates;
+            BlockState ladderState = Blocks.LADDER.defaultBlockState();
+            ladderState.setValue(LadderBlock.FACING, returnDir);
+            if (world.getBlockState(pillar).isAir()){
+                buildTargets = new BlockPos[]{pillar, ladder};
+                buildStates = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
+            }else{
+                buildTargets = new BlockPos[]{ladder};
+                buildStates = new BlockState[]{ladderState};
+            }
+            dropDown.buildTargets = buildTargets;
+            dropDown.buildMats = buildStates;
+            dropDown.cost += 1;// kind of irrelevant to be honest
+        }
+        /*
+         note to self, this is like a wormhole of generating cost. We only apply the historial cost to the final node which gets added to stack.
+         This also lessens the penalty for this as well.
+         */
+        if (dropDown == current) return null; // No legal dropdown pillar could be formed?
+        dropDown.cost += current.cost + 2;
+        return dropDown;
+    }
+
+    /**
+     *  Calculates the dropdown ladder pillar direction relative to where the "drop" is
+     * @return    The direction we need to apply to proposed ladder-pillar positions
+     *          to get back to the original x,z from before we starting pillaring down.
+     *          ex.
+     *          If we are moving East, we hope to see West be the direction returned.
+     */
+    private Direction detDropLadderDir(BlockPos current, BlockPos proposed){
+        int dx = current.getX() - proposed.getX();
+        int dz = current.getZ() - proposed.getZ();
+
+        return  Direction.fromDelta(dx, 0, dz);
     }
 
     private boolean checkParentOverlap(Node current, BlockPos toAdd){
