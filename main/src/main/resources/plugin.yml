@@ -6,3 +6,5 @@ commands:
   testnexus:
   clearnexusdata:
   ispawn:
+  simpath:
+

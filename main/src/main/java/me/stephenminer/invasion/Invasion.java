@@ -1,6 +1,7 @@
 package me.stephenminer.invasion;
 
 import me.stephenminer.invasion.commands.ClearNexusData;
+import me.stephenminer.invasion.commands.SimulatePath;
 import me.stephenminer.invasion.commands.SpawnMonster;
 import me.stephenminer.invasion.commands.TestNexus;
 import me.stephenminer.invasion.entity.InvasionMob;
@@ -55,6 +56,7 @@ public final class Invasion extends JavaPlugin {
         SpawnMonster spawnCmd = new SpawnMonster();
         getCommand("ispawn").setExecutor(spawnCmd);
         getCommand("ispawn").setTabCompleter(spawnCmd);
+        getCommand("simpath").setExecutor(new SimulatePath());
     }
 
 
