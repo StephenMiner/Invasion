@@ -33,11 +33,20 @@ public class BuilderPathfinder extends InvasionPathfinder{
             Node dropNode = evalDropLadder(pos, goal, current); // null if not straight down, or impossible to generate
             if (pos.equals(current.pos.below())) return null; // Unsupported movement
             Node regular = super.evalPosition(pos, goal, current);
-            return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
+            return regular;
+           // return regular == null ? evalBridgeRoute(pos, goal, current) : regular;
         }
+
+        // At this point we know we are moving in a strictly above direction
+        // Thus, running super.evalPosition can only return to us a Node
+        // if there already exists ladder infrastructure there.
+        Node hasLadder = super.evalPosition(pos, goal , current);
+        if (hasLadder != null) return hasLadder;
+        /*
         Direction dir = null;
         if (current.parent == null) dir = Direction.Plane.HORIZONTAL.getRandomDirection(world.getRandom());
         double dist = -1;
+
         for (Direction d : Direction.Plane.HORIZONTAL){
             double tempDist = pos.relative(d).distManhattan(goal);
             if (dist == -1 || tempDist < dist){
@@ -45,31 +54,86 @@ public class BuilderPathfinder extends InvasionPathfinder{
                 dist = tempDist;
             }
         }
-        int segmentsToBuild = 4;
-        if (current.buildTargets != null && scaffoldNode(current)){
-            segmentsToBuild = 2;
-        }
 
-        Node tower = current;
-        //complicated looking code final boss
-        // -1 is so that the place at the entities foot position will also have a pillar + ladder if they are just starting the scaffold. Otherwise we don't do this
-        for (int i = segmentsToBuild != 4 ? 0 : -1; i < segmentsToBuild; i++){
-            tower = evalLadderNode(pos, goal, tower, dir, i);
-            if (tower == null) return null;
+         */
+        Node selected = null;
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            int segmentsToBuild = 2;
+            if (current.buildTargets != null && scaffoldNode(current)) {
+                segmentsToBuild = 1;
+            }
+
+            Node tower = current;
+            Node old;
+            //complicated looking code final boss
+            // -1 is so that the place at the entities foot position will also have a pillar + ladder if they are just starting the scaffold. Otherwise we don't do this
+            for (int i = segmentsToBuild != 2 ? 0 : -1; i < segmentsToBuild; i++) {
+                old = tower;
+                int oldCost = tower.cost();
+                tower = evalLadderNode(pos.relative(Direction.UP, i), goal, tower, d);
+                if (tower == old)
+                    break;
+                tower.cost += oldCost;
+            }
+            // tower can never equal current by the time we reach this, so no need to worry 'bout cost doubling.
+
+            if (selected == null || selected.totalCost() > tower.totalCost() )//verifyAncestors(tower,4)
+                selected = tower;
         }
-        // tower can never equal current by the time we reach this, so no need to worry 'bout cost doubling.
-        tower.cost += current.cost;
-        return tower;
+        return selected;
     }
 
-    private Node evalLadderNode(BlockPos pos, BlockPos goal, Node current, Direction dir, int upOffset){
+    /**
+     * Small check to make sure provided Node isn't interferring with work done by its ancestors to a certain degree.
+     * Mainly for blocking a case where a pillar is constructed where an entity just came from in order to ladder climb.
+     * @param node The Node we are validating
+     * @param historyCheck How many ancestors do we check
+     * @return True if there are no overlaps between historical Node positions / modifications and the current Node's modification positions
+     */
+    private boolean verifyAncestors(Node node, int historyCheck){
+        Node current = node;
+        Set<BlockPos> modifiedPositions = new HashSet<>();
+        if (node.digTargets != null)
+            modifiedPositions.addAll(List.of(node.digTargets));
+        if (node.buildTargets != null)
+            modifiedPositions.addAll(List.of(node.buildTargets));
+        if (modifiedPositions.isEmpty()) return true;
+        for (int i = 0; i < historyCheck; i++){
+            current = node.parent;
+            if (current == null) return true;
+            if (modifiedPositions.contains(current.pos)) return false;
+            if (intersection(modifiedPositions, current.digTargets)) return false;
+            if (intersection(modifiedPositions, current.buildTargets)) return false;
+        }
+        return true;
+    }
+
+    private boolean intersection(Set<BlockPos> matchAgainst, BlockPos... positions){
+        if (positions == null) return false;
+        for (BlockPos pos : positions){
+            if (matchAgainst.contains(pos)) return true;
+        }
+        return false;
+    }
+
+    /**
+     *  Generates a ladder node to start a tower branch. We return either a new node or the current node passed in
+     *  to indicate that a ladder node in the desired location is impossible.
+     * @param pos  Where we want to go with this Node
+     * @param goal  The overall destination
+     * @param current  The current Node we are branching off of
+     * @param dir  The direction we want the ladder's pillar to be in
+     * @return A new Node containing the associated dig costs and build costs, or the current Node un-modified if a
+     * ladder node is impossible
+     */
+    private Node evalLadderNode(BlockPos pos, BlockPos goal, Node current, Direction dir){
         // No dig extra because we are only in a pure upwards direction
         BlockPos above = pos.above();
 
         BlockState state = world.getBlockState(pos);
         BlockState stateAbove = world.getBlockState(above);
 
-        BlockPos pillar = pos.relative(dir).relative(Direction.UP, upOffset);
+        BlockPos pillar = pos.relative(dir);
         BlockState pillarState = world.getBlockState(pillar);
 
         Node node = buildNode(current, pos, goal);
@@ -77,30 +141,43 @@ public class BuilderPathfinder extends InvasionPathfinder{
         ladderState = ladderState.setValue(LadderBlock.FACING, dir.getOpposite());
         BlockPos[] digTargets = null;
         float digCost = 0;
+        int buildCost = 0;
         if (walkable(stateAbove) && walkable(state)){
             // free space, may delete branch
         }else if (!walkable(stateAbove) && walkable(state)){
-            if (!canDig(stateAbove)) return null;
+            if (!canDig(stateAbove)) return current;
             digTargets = new BlockPos[]{above};
         }else if (walkable(stateAbove) && !walkable(state)){
-            if (!canDig(state)) return null;
+            if (!canDig(state)) return current;
             digTargets = new BlockPos[]{pos};
         }else if (!walkable(state) && !walkable(stateAbove)){
-            if (!canDig(state) || !canDig(stateAbove)) return null;
+            if (!canDig(state) || !canDig(stateAbove)) return current;
             digTargets = new BlockPos[]{pos, above};
         }
-        if (!canBridge(pillarState)) {
-            node.buildTargets = new BlockPos[]{pos};
-            node.buildMats = new BlockState[]{ladderState};
+        boolean needLadder = !state.is(Blocks.LADDER);
+        //TODO: Remove Magic Numbers here
+        if (!walkable(pillarState)) {
+            if (needLadder) {
+                node.buildTargets = new BlockPos[]{pos};
+                node.buildMats = new BlockState[]{ladderState};
+            }
         }else{
-            node.buildTargets = new BlockPos[]{pillar, pos};
-            node.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
+            if (needLadder){
+                node.buildTargets = new BlockPos[]{pillar, pos};
+                node.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState(), ladderState};
+                buildCost += 1;
+            }else{
+                buildCost += 1;
+                node.buildTargets = new BlockPos[]{pillar};
+                node.buildMats = new BlockState[]{Blocks.OAK_PLANKS.defaultBlockState()}; // unrealistic
+                System.out.println("Determined we do not need a ladder at " + node.toString() + "Current state: " + world.getBlockState(node.pos).getBlock().toString());
+            }
         }
         digCost += determineDigCost(digTargets);
-        if (digCost < 0) return null;
+        if (digCost < 0) return current;
         node.digTargets = digTargets;
         // defer addition of final cost to avoid over-penalizing tower creation.
-        node.cost += (int) digCost;
+        node.cost += (int) digCost + buildCost;
         return node;
     }
 
@@ -266,7 +343,10 @@ public class BuilderPathfinder extends InvasionPathfinder{
                     cached = i;
                 }else System.out.println("HEIGHT: " + scaffoldHeight);
                 scaffoldHeight++;
-            }else scaffoldHeight = 0;
+            }else{
+                scaffoldHeight = 0;
+                cached = i + 1;
+            }
             prev = node;
         }
     }

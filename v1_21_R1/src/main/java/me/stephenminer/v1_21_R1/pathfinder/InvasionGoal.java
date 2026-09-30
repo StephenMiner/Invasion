@@ -85,12 +85,9 @@ public class InvasionGoal extends Goal {
         }
 
         if (!moveFlag){
-            // Hold position on the ladder
-            if (isOnLadder(mob.blockPosition())){
-                mob.addDeltaMovement(new Vec3(0,0.2,0));
-            }
             if (mob.distanceToSqr(current.pos.getCenter()) > 12) {
                 // kind of ew, but recalc path
+                System.out.println("Triggered Recalc based of Distance");
                 recalcPath();
                 return;
             }
@@ -120,6 +117,7 @@ public class InvasionGoal extends Goal {
                 BlockState worldState = level.getBlockState(pos);
                 if (pathfinder.isSolid(pos, level.getBlockState(pos)) && ((pathfinder.walkable(state) && !pathfinder.walkable(worldState)) || (!pathfinder.walkable(state) && pathfinder.walkable(worldState)))) {
                     // Someone placed a block where a walkable block was going to be placed
+                    System.out.println("Path compromised! Block placed where entity wanted a block to go");
                     recalcPath();
                     return;
                 }
@@ -138,16 +136,25 @@ public class InvasionGoal extends Goal {
         }else{
             Vec3 nextPos = getEntityPosAtNode(mob, stepIndex);
             if (isOnLadder()) {// && !isOnLadder(current.pos)
+                /*
                 if (!blockPosValid(current.pos)){
                     System.out.println("found bad position at node : " + current);
                     recalcPath();
-                    return;}
+                    return;
+                }
+
+                 */
                 double dx = current.x + 0.5 - mob.getX();
                 double dy = current.y + 0.5 - mob.getY();
                 double dz = current.z + 0.5 - mob.getZ();
-                mob.setDeltaMovement(0, 0, 0);
-                mob.setPos(mob.getX() + dx * 0.1, mob.getY() + dy*0.2, mob.getZ() + dz * 0.1);
+                Vec3 delta = mob.getDeltaMovement();
+                Vec3 newDelta = new Vec3(delta.x, dy * 0.2, delta.z);
+                Vec3 position = new Vec3(mob.getX() + dx * 0.1, mob.getY() + dy * 0.2, mob.getZ() + dz * 0.1);
+                // mob.setPos(mob.getX() + dx * 0.01, mob.getY() + dy*0.2, mob.getZ() + dz * 0.01);
+              //  mob.setPos(current.x + 0.5, mob.getY() + dy * 0.25, current.z + 0.5);
+                mob.setDeltaMovement(new Vec3(dx * 0.1, dy * 0.2, dz * 0.1));
                 // Ensure valid positioning
+               // mob.setDeltaMovement(newDelta);
             }else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
             if (mob.position().distanceToSqr(prevPos) < MAX_STUCK_THRESHHOLd){
                 mob.getMoveControl().setWantedPosition(current.pos.getX() + 0.5, current.pos.getY() + 0.5, current.pos.getZ() + 0.5, 1.0f);

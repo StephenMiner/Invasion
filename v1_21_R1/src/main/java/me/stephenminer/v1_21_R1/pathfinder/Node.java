@@ -65,6 +65,10 @@ public class Node {
         return builder.toString();
     }
 
+    public BlockPos[] digTargets(){ return digTargets; }
+    public BlockPos[] buildTargets(){ return buildTargets; }
+    public BlockState[] buildMats(){ return buildMats; }
+
     @Override
     public int hashCode(){
         return Objects.hash(this.x, this.y, this.z, this.heuristic, this.cost);
