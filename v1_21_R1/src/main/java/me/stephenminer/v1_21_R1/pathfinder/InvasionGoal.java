@@ -1,13 +1,16 @@
 package me.stephenminer.v1_21_R1.pathfinder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -147,14 +150,8 @@ public class InvasionGoal extends Goal {
                 double dx = current.x + 0.5 - mob.getX();
                 double dy = current.y + 0.5 - mob.getY();
                 double dz = current.z + 0.5 - mob.getZ();
-                Vec3 delta = mob.getDeltaMovement();
-                Vec3 newDelta = new Vec3(delta.x, dy * 0.2, delta.z);
-                Vec3 position = new Vec3(mob.getX() + dx * 0.1, mob.getY() + dy * 0.2, mob.getZ() + dz * 0.1);
-                // mob.setPos(mob.getX() + dx * 0.01, mob.getY() + dy*0.2, mob.getZ() + dz * 0.01);
-              //  mob.setPos(current.x + 0.5, mob.getY() + dy * 0.25, current.z + 0.5);
-                mob.setDeltaMovement(new Vec3(dx * 0.1, dy * 0.2, dz * 0.1));
-                // Ensure valid positioning
-               // mob.setDeltaMovement(newDelta);
+                setMobLadderMovement(level, current, nextPos);
+              //  mob.setPos(current.x + 0.5, mob.getY() + dy * 0.25, current.z + 0.5); OG method
             }else mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
             if (mob.position().distanceToSqr(prevPos) < MAX_STUCK_THRESHHOLd){
                 mob.getMoveControl().setWantedPosition(current.pos.getX() + 0.5, current.pos.getY() + 0.5, current.pos.getZ() + 0.5, 1.0f);
@@ -168,6 +165,45 @@ public class InvasionGoal extends Goal {
                 stuck = 0;
             }
         }
+    }
+
+    private void setMobLadderMovement(Level world, Node current, Vec3 nextPos){
+        BlockPos pos = mob.blockPosition();
+        Direction ladderDir = determineLadderDir(pos, world);
+        if (ladderDir == null) return; // not on a ladder
+        if (current.pos.getX() != pos.getX() || current.pos.getZ() != pos.getZ()) {
+            double dx = nextPos.x - mob.getX();
+            double dy = nextPos.y - mob.getY();
+            double dz = nextPos.z - mob.getZ();
+            Vec3 dir = new Vec3(dx, dy, dz).normalize();
+            mob.setDeltaMovement(dir.multiply(0.5,0.5,0.5));
+           // mob.getMoveControl().setWantedPosition(nextPos.x, nextPos.y, nextPos.z, 1.0f);
+           // mob.getMoveControl().setWantedPosition( current.x + 0.5,  current.y + 0.5, current.z + 0.5, 1.0f);
+            System.out.println("Non vert movement detectedddddd");
+            return; // Need to perform non-vertical movement
+        }
+
+        double dx = ladderDir.getStepX() * 0.25;
+        double dz = ladderDir.getStepZ() * 0.25;
+      //  mob.setDeltaMovement(delta.x + dx, delta.y, delta.z + dz);
+        Vec3 ladderMovement = new Vec3(dx, 0, dz);
+        ladderMovement = applyCenteringCorrection(ladderMovement, mob.position(), nextPos);
+        mob.setDeltaMovement(ladderMovement);
+
+    }
+
+    private Direction determineLadderDir(BlockPos mobPos, Level world){
+        if (!isOnLadder()) return null;
+        BlockState state = world.getBlockState(mobPos);
+        // All ladders should have a facing property
+        return state.getValue(LadderBlock.FACING).getOpposite();
+    }
+
+    private Vec3 applyCenteringCorrection(Vec3 current, Vec3 pos, Vec3 desired){
+        double dx = desired.x - pos.x;
+        double dz = desired.z - pos.z;
+        Vec3 delta = new Vec3(dx, 0, dz).normalize().multiply(0.25,0,0.25);
+        return current.add(delta);
     }
 
     private boolean blockPosValid(BlockPos pos){

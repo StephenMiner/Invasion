@@ -45,10 +45,6 @@ public class InvasionPathfinder {
                 if (node == null) continue;
                 long key = pos.asLong();
                 Node onFile = visited.get(key);
-               // System.out.println(node.toString());
-               // if (critNode)
-                    //System.out.println(node.
-                //toString());
                 if (onFile == null || node.cost < onFile.cost) {
                     visited.put(key, node);
                     open.push(node);
@@ -73,12 +69,12 @@ public class InvasionPathfinder {
             else if (digging && isLadder(posState) && !walkable(aboveState)){
                 // Might be a bit scuffed
                 node = buildNode(current, pos, goal);
-                node.cost *= mod;
-                node.cost += current.cost;
                 node.digTargets = new BlockPos[]{above};
                 double digCost = determineDigCost(node.digTargets);
                 if (digCost < 1) return null;
                 node.cost += digCost;
+                node.cost *= mod;
+                node.cost += current.cost;
             }
         }else if (current.pos.below().equals(pos)){
             if (isLadder(posState) && walkable(belowState)){
@@ -107,9 +103,6 @@ public class InvasionPathfinder {
         double digCost = 0;
         Node ladderNode = ladderCases(pos, above, goal, state, stateAbove, stateBelow, current, true);
         if (ladderNode != null || pos.equals(current.pos.above()) || pos.equals(current.pos.below())) {
-          //  if (ladderNode != null && ladderNode.x == 132 && ladderNode.y == 59 && ladderNode.z == -27)
-          //      System.out.println("LADDER: " + ladderNode);
-           // else System.out.println(23);
             return ladderNode;
         }
         if (walkable(stateAbove) && walkable(state) && isSolid(below, stateBelow)){
@@ -163,7 +156,7 @@ public class InvasionPathfinder {
             if (world.getBlockState(pos).destroySpeed < 0) return -1;
             sum += world.getBlockState(pos).destroySpeed;
         }
-        return  0.5f * sum;
+        return Math.max(1, 0.5f * sum);
     }
 
 
