@@ -202,7 +202,10 @@ public class InvasionGoal extends Goal {
     private Vec3 applyCenteringCorrection(Vec3 current, Vec3 pos, Vec3 desired){
         double dx = desired.x - pos.x;
         double dz = desired.z - pos.z;
-        Vec3 delta = new Vec3(dx, 0, dz).normalize().multiply(0.25,0,0.25);
+        Vec3 delta = new Vec3(dx, 0, dz);
+        if (delta.length() > 1){
+            delta = delta.normalize().multiply(0.25,0,0.25);
+        }
         return current.add(delta);
     }
 
