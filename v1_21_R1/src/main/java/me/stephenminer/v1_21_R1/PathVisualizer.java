@@ -9,7 +9,6 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -20,9 +19,7 @@ public class PathVisualizer implements Visualizer {
 
     private List<int[]> constructionPoints, diggingPoints, movementPoints;
 
-    public PathVisualizer(){
-
-    }
+    public PathVisualizer(){}
 
 
     @Override

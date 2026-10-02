@@ -15,6 +15,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class SimulatePath implements CommandExecutor {
     private final Invasion plugin;
 
+    private Visualizer visualizer;
+
     public SimulatePath(){
         this.plugin = JavaPlugin.getPlugin(Invasion.class);
     }
@@ -31,12 +33,24 @@ public class SimulatePath implements CommandExecutor {
             return false;
         }
 
+        if (args.length >= 1){
+            String arg = args[0];
+            if (arg.equalsIgnoreCase("stop") || arg.equalsIgnoreCase("off") || arg.equalsIgnoreCase("false")){
+                visualizer.stopVisualization();
+                sender.sendMessage(ChatColor.GREEN + "Ended Path Visualization");
+                return true;
+            }
+        }
+
         if (Invasion.nexusMap.values().isEmpty()) {
             sender.sendMessage(ChatColor.RED + "No Nexus to visualize");
             return false;
         }
         Nexus nexus = Invasion.nexusMap.values().stream().findFirst().get();
-        Visualizer visualizer = instance();
+        if (visualizer != null){
+            visualizer.stopVisualization();
+        }
+        visualizer = instance();
         Player player = (Player) sender;
         Location start = player.getLocation();
         Location goal = nexus.loc();
